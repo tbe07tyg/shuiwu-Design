@@ -605,7 +605,24 @@ const handleSubmit = async (values) => {
     await new Promise(resolve => setTimeout(resolve, 2000))
     
     message.success('开题申请提交成功')
-    router.push('/opening/applicant/manage')
+    
+    // 检查是否来自项目经理后台，决定返回路径
+    const route = router.currentRoute.value
+    if (route.query.fromPM === 'true' && route.query.projectId) {
+      // 返回项目监控页面
+      router.push({
+        path: `/project-manager/projects/monitor/${route.query.projectId}`,
+        query: {
+          action: 'milestone_submitted',
+          milestoneType: route.query.milestoneType,
+          submitTime: new Date().toISOString()
+        }
+      })
+      message.info('正在返回项目监控页面...')
+    } else {
+      // 正常流程返回申请管理页面
+      router.push('/opening/applicant/manage')
+    }
     
   } catch (error) {
     message.error('提交失败，请重试')
@@ -617,6 +634,33 @@ const handleSubmit = async (values) => {
 // 生命周期
 onMounted(() => {
   const route = router.currentRoute.value
+  
+  // 检查是否来自项目经理后台
+  if (route.query.fromPM === 'true') {
+    // 项目经理后台跳转过来的处理
+    if (route.query.projectId) {
+      const projectId = parseInt(route.query.projectId)
+      const project = availableProjects.value.find(p => p.id === projectId)
+      if (project) {
+        formData.value.projectId = projectId
+        message.success(`已自动关联项目：${route.query.projectName || project.name}`)
+      }
+    }
+    
+    // 根据里程碑类型设置默认值
+    if (route.query.milestoneType) {
+      const milestoneType = route.query.milestoneType
+      if (milestoneType.includes('开题')) {
+        formData.value.acceptanceType = 'opening'
+        formData.value.description = `${route.query.projectName}项目开题申请材料`
+      }
+    }
+    
+    // 设置预期时间为当前时间后7天
+    formData.value.expectedDate = dayjs().add(7, 'day')
+    
+    message.info('已从项目监控页面自动填充基础信息，请补充完整申请材料')
+  }
   
   // 检查是否是重新提交
   if (route.query.resubmit === 'true') {

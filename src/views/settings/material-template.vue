@@ -25,14 +25,8 @@
           <ReloadOutlined />
           刷新配置
         </a-button>
-        <a-button type="primary" @click="handleBatchImport">
-          <UploadOutlined />
-          批量导入
-        </a-button>
-        <a-button @click="handleBatchExport">
-          <DownloadOutlined />
-          批量导出
-        </a-button>
+
+
         <a-button type="primary" danger @click="handleResetToDefault">
           重置默认
         </a-button>
@@ -278,37 +272,7 @@
       />
     </a-modal>
 
-    <!-- 批量导入对话框 -->
-    <a-modal
-      v-model:open="importVisible"
-      title="批量导入配置"
-      @ok="handleConfirmImport"
-      @cancel="handleImportDialogClose"
-      :confirm-loading="importLoading"
-    >
-      <a-upload-dragger
-        :file-list="importFileList"
-        :before-upload="handleImportFile"
-        :remove="handleRemoveImportFile"
-        accept=".json"
-        :max-count="1"
-        :show-upload-list="{
-          showDownloadIcon: false,
-          showPreviewIcon: false,
-          showRemoveIcon: true
-        }"
-      >
-        <p class="ant-upload-drag-icon">
-          <InboxOutlined />
-        </p>
-        <p class="ant-upload-text">
-          {{ importFileList.length > 0 ? '重新选择文件' : '点击或拖拽文件到此区域上传' }}
-        </p>
-        <p class="ant-upload-hint">
-          {{ importFileList.length > 0 ? `已选择：${importFileList[0].name}` : '支持导入JSON格式的配置文件' }}
-        </p>
-      </a-upload-dragger>
-    </a-modal>
+
   </div>
 </template>
 
@@ -316,7 +280,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { 
-  FileTextOutlined, UploadOutlined, DownloadOutlined, ReloadOutlined,
+  FileTextOutlined, ReloadOutlined,
   FormOutlined, RocketOutlined, PieChartOutlined, CheckCircleOutlined,
   PlusOutlined, EditOutlined, DeleteOutlined, FileOutlined, EyeOutlined,
   InboxOutlined
@@ -327,7 +291,7 @@ import MaterialTemplateSync from '@/components/MaterialTemplateSync.vue'
 export default {
   name: 'MaterialTemplateManager',
   components: {
-    FileTextOutlined, UploadOutlined, DownloadOutlined, ReloadOutlined,
+    FileTextOutlined, ReloadOutlined,
     FormOutlined, RocketOutlined, PieChartOutlined, CheckCircleOutlined,
     PlusOutlined, EditOutlined, DeleteOutlined, FileOutlined, EyeOutlined,
     InboxOutlined, MaterialTemplateSync
@@ -337,12 +301,12 @@ export default {
     const activeTab = ref('apply')
     const dialogVisible = ref(false)
     const previewVisible = ref(false)
-    const importVisible = ref(false)
+
     const isEdit = ref(false)
     const searchKeyword = ref('')
     const loading = ref(false)
     const submitLoading = ref(false)
-    const importLoading = ref(false)
+
     const previewBusinessType = ref('apply')
 
     // 业务标签页配置
@@ -366,9 +330,9 @@ export default {
 
     // 模板文件列表
     const templateFileList = ref([])
-    const importFileList = ref([])
+
     const templateUploading = ref(false)
-    const importUploading = ref(false)
+
 
     // 表单验证规则
     const categoryRules = {
@@ -642,73 +606,9 @@ export default {
       console.log('预览页面配置已更新', configs)
     }
 
-    // 批量导入
-    const handleBatchImport = () => {
-      importVisible.value = true
-    }
 
-    // 关闭导入对话框
-    const handleImportDialogClose = () => {
-      importFileList.value = []
-    }
 
-    // 处理导入文件
-    const handleImportFile = (file) => {
-      if (!file.name.endsWith('.json')) {
-        message.error('请选择JSON格式的配置文件')
-        return false
-      }
-      
-      importUploading.value = true
 
-      // 模拟异步处理
-      setTimeout(() => {
-        // 更新导入文件列表显示
-        importFileList.value = [{
-          uid: file.uid || Date.now().toString(),
-          name: file.name,
-          status: 'done',
-          originFileObj: file
-        }]
-        
-        importUploading.value = false
-        message.success(`配置文件 "${file.name}" 已选择`)
-      }, 200) // 短暂延迟以显示上传状态
-      
-      return false // 阻止自动上传
-    }
-
-    // 移除导入文件
-    const handleRemoveImportFile = (file) => {
-      importFileList.value = []
-      message.success('导入文件已移除')
-      return true // 允许移除
-    }
-
-    // 确认导入
-    const handleConfirmImport = async () => {
-      if (importFileList.value.length === 0) {
-        message.warning('请先选择要导入的配置文件')
-        return
-      }
-
-      importLoading.value = true
-      try {
-        const file = importFileList.value[0].originFileObj
-        await materialTemplateStore.importConfigs(file, activeTab.value)
-        importVisible.value = false
-        importFileList.value = []
-      } catch (error) {
-        // 错误处理在 store 中已完成
-      } finally {
-        importLoading.value = false
-      }
-    }
-
-    // 批量导出
-    const handleBatchExport = () => {
-      materialTemplateStore.exportConfigs(activeTab.value)
-    }
 
     // 重置为默认配置
     const handleResetToDefault = () => {
@@ -739,19 +639,19 @@ export default {
       activeTab,
       dialogVisible,
       previewVisible,
-      importVisible,
+
       categoryForm,
       categoryRules,
       searchKeyword,
       columns,
       loading,
       submitLoading,
-      importLoading,
+
       businessTabs,
       templateFileList,
-      importFileList,
+
       templateUploading,
-      importUploading,
+
       paginationConfig,
       previewBusinessType,
       
@@ -778,12 +678,8 @@ export default {
       handleDownloadTemplate,
       handlePreviewBusinessPage,
       handlePreviewConfigUpdate,
-      handleBatchImport,
-      handleImportDialogClose,
-      handleImportFile,
-      handleRemoveImportFile,
-      handleConfirmImport,
-      handleBatchExport,
+
+
       handleResetToDefault
     }
   }

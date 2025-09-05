@@ -1,0 +1,594 @@
+<!--
+ * @file 提示词预览组件
+ * @description 预览豆包AI解析提示词内容
+ * @author 科研管理系统
+ * @version 3.0.0
+ * @date 2025-01-29
+-->
+<template>
+  <div class="prompt-preview">
+    <!-- 预览头部 -->
+    <div class="preview-header">
+      <h3>🤖 豆包增强提示词预览</h3>
+      <a-space>
+        <a-button size="small" @click="copyContent">
+          <CopyOutlined />
+          复制全部
+        </a-button>
+        <a-button size="small" @click="downloadPrompt">
+          <DownloadOutlined />
+          下载
+        </a-button>
+        <a-button size="small" @click="$emit('close')">
+          关闭
+        </a-button>
+      </a-space>
+    </div>
+
+    <!-- 提示词统计 -->
+    <div class="prompt-stats">
+      <a-row :gutter="16">
+        <a-col :span="6">
+          <a-statistic title="字符数" :value="stats.characterCount" />
+        </a-col>
+        <a-col :span="6">
+          <a-statistic title="词数" :value="stats.wordCount" />
+        </a-col>
+        <a-col :span="6">
+          <a-statistic title="行数" :value="stats.lineCount" />
+        </a-col>
+        <a-col :span="6">
+          <a-statistic title="预估Token" :value="stats.estimatedTokens" />
+        </a-col>
+      </a-row>
+    </div>
+
+    <!-- 提示词内容 -->
+    <div class="prompt-content">
+      <div class="content-toolbar">
+        <a-space>
+          <a-button size="small" @click="toggleLineNumbers">
+            <NumberOutlined />
+            {{ showLineNumbers ? '隐藏' : '显示' }}行号
+          </a-button>
+          <a-button size="small" @click="toggleWordWrap">
+            <AlignLeftOutlined />
+            {{ wordWrap ? '取消' : '启用' }}换行
+          </a-button>
+          <a-select v-model:value="fontSize" size="small" style="width: 80px;">
+            <a-select-option value="12">12px</a-select-option>
+            <a-select-option value="14">14px</a-select-option>
+            <a-select-option value="16">16px</a-select-option>
+            <a-select-option value="18">18px</a-select-option>
+          </a-select>
+        </a-space>
+      </div>
+      
+      <div 
+        class="prompt-text"
+        :class="{ 'show-line-numbers': showLineNumbers, 'word-wrap': wordWrap }"
+        :style="{ fontSize: fontSize + 'px' }"
+      >
+        <pre v-if="showLineNumbers" class="line-numbers">{{ lineNumbers }}</pre>
+        <pre class="content-text">{{ content }}</pre>
+      </div>
+    </div>
+
+    <!-- 提示词结构分析 -->
+    <div class="prompt-analysis">
+      <a-collapse>
+        <a-collapse-panel key="structure" header="📋 提示词结构分析">
+          <div class="structure-analysis">
+            <a-descriptions :column="2" bordered size="small">
+              <a-descriptions-item label="基础信息部分">
+                <a-tag color="blue">✓ 包含</a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="研究内容部分">
+                <a-tag color="blue">✓ 包含</a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="任务提取指令">
+                <a-tag color="green">✓ 增强版</a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="JSON结构定义">
+                <a-tag color="blue">✓ 完整</a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="任务拆解指南">
+                <a-tag color="green">✓ 详细</a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="注意事项">
+                <a-tag color="orange">✓ 完备</a-tag>
+              </a-descriptions-item>
+            </a-descriptions>
+          </div>
+        </a-collapse-panel>
+        
+        <a-collapse-panel key="sections" header="🔍 内容区块分析">
+          <div class="sections-analysis">
+            <div v-for="section in contentSections" :key="section.name" class="section-item">
+              <div class="section-header">
+                <h4>{{ section.name }}</h4>
+                <a-tag :color="section.status === 'complete' ? 'green' : 'orange'">
+                  {{ section.status === 'complete' ? '完整' : '部分' }}
+                </a-tag>
+              </div>
+              <p class="section-description">{{ section.description }}</p>
+              <div class="section-stats">
+                <span>字符数: {{ section.length }}</span>
+                <span>占比: {{ ((section.length / content.length) * 100).toFixed(1) }}%</span>
+              </div>
+            </div>
+          </div>
+        </a-collapse-panel>
+        
+        <a-collapse-panel key="validation" header="✅ 提示词验证">
+          <div class="validation-results">
+            <a-list :data-source="validationResults" size="small">
+              <template #renderItem="{ item }">
+                <a-list-item>
+                  <a-list-item-meta>
+                    <template #avatar>
+                      <a-avatar :style="{ backgroundColor: item.status === 'pass' ? '#52c41a' : '#ff4d4f' }">
+                        {{ item.status === 'pass' ? '✓' : '✗' }}
+                      </a-avatar>
+                    </template>
+                    <template #title>
+                      {{ item.title }}
+                    </template>
+                    <template #description>
+                      {{ item.description }}
+                    </template>
+                  </a-list-item-meta>
+                </a-list-item>
+              </template>
+            </a-list>
+          </div>
+        </a-collapse-panel>
+        
+        <a-collapse-panel key="optimization" header="🚀 优化建议">
+          <div class="optimization-suggestions">
+            <a-alert
+              v-for="suggestion in optimizationSuggestions"
+              :key="suggestion.type"
+              :message="suggestion.title"
+              :description="suggestion.description"
+              :type="suggestion.level"
+              show-icon
+              style="margin-bottom: 8px;"
+            />
+          </div>
+        </a-collapse-panel>
+      </a-collapse>
+    </div>
+
+    <!-- 快速操作 -->
+    <div class="quick-actions">
+      <a-divider>快速操作</a-divider>
+      <a-space wrap>
+        <a-button @click="copySection('header')">
+          <CopyOutlined />
+          复制头部
+        </a-button>
+        <a-button @click="copySection('json')">
+          <CopyOutlined />
+          复制JSON结构
+        </a-button>
+        <a-button @click="copySection('guide')">
+          <CopyOutlined />
+          复制拆解指南
+        </a-button>
+        <a-button @click="copySection('notes')">
+          <CopyOutlined />
+          复制注意事项
+        </a-button>
+        <a-button @click="openDoubao">
+          <LinkOutlined />
+          打开豆包
+        </a-button>
+      </a-space>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, watch } from 'vue'
+import { message } from 'ant-design-vue'
+import { 
+  CopyOutlined, 
+  DownloadOutlined,
+  NumberOutlined,
+  AlignLeftOutlined,
+  LinkOutlined
+} from '@ant-design/icons-vue'
+
+// Props
+const props = defineProps({
+  content: {
+    type: String,
+    required: true
+  }
+})
+
+// Emits
+const emit = defineEmits(['copy', 'close'])
+
+// 响应式数据
+const showLineNumbers = ref(true)
+const wordWrap = ref(true)
+const fontSize = ref('14')
+
+// 计算属性
+const stats = computed(() => {
+  const content = props.content
+  return {
+    characterCount: content.length,
+    wordCount: content.split(/\s+/).filter(word => word.length > 0).length,
+    lineCount: content.split('\n').length,
+    estimatedTokens: Math.ceil(content.length / 4)
+  }
+})
+
+const lineNumbers = computed(() => {
+  const lines = props.content.split('\n')
+  return lines.map((_, index) => (index + 1).toString().padStart(3, ' ')).join('\n')
+})
+
+const contentSections = computed(() => {
+  const content = props.content
+  const sections = []
+  
+  // 分析不同区块
+  const sectionPatterns = [
+    { name: '📋 解析要求', pattern: /【解析要求】[\s\S]*?(?=【|$)/, description: '基础解析指令' },
+    { name: '🎯 任务提取指南', pattern: /【任务提取指南】[\s\S]*?(?=【|$)/, description: '任务拆解指导' },
+    { name: '📝 JSON结构', pattern: /```json[\s\S]*?```/, description: 'JSON格式定义' },
+    { name: '⚠️ 特别注意', pattern: /【特别注意】[\s\S]*?(?=【|$)/, description: '重要提醒事项' },
+    { name: '📄 申报书内容', pattern: /【申报书内容】[\s\S]*?(?=【|$)/, description: '实际文档内容' }
+  ]
+  
+  sectionPatterns.forEach(pattern => {
+    const match = content.match(pattern.pattern)
+    if (match) {
+      sections.push({
+        name: pattern.name,
+        description: pattern.description,
+        length: match[0].length,
+        status: 'complete'
+      })
+    } else {
+      sections.push({
+        name: pattern.name,
+        description: pattern.description,
+        length: 0,
+        status: 'missing'
+      })
+    }
+  })
+  
+  return sections
+})
+
+const validationResults = computed(() => {
+  const content = props.content
+  const results = []
+  
+  // 验证各项内容
+  results.push({
+    title: 'JSON格式标记',
+    description: '检查是否包含```json标记',
+    status: content.includes('```json') ? 'pass' : 'fail'
+  })
+  
+  results.push({
+    title: '任务提取指令',
+    description: '检查是否包含任务提取相关指令',
+    status: content.includes('taskExtraction') ? 'pass' : 'fail'
+  })
+  
+  results.push({
+    title: '申报书内容占位符',
+    description: '检查是否包含内容占位符',
+    status: content.includes('{申报书完整内容}') || content.includes('【申报书内容】') ? 'pass' : 'fail'
+  })
+  
+  results.push({
+    title: '任务类型定义',
+    description: '检查是否定义了所有任务类型',
+    status: ['implementationTasks', 'technicalTasks', 'milestoneTasks', 'researchTasks'].every(type => content.includes(type)) ? 'pass' : 'fail'
+  })
+  
+  return results
+})
+
+const optimizationSuggestions = computed(() => {
+  const suggestions = []
+  const content = props.content
+  
+  // 长度检查
+  if (content.length > 10000) {
+    suggestions.push({
+      type: 'length',
+      title: '提示词过长',
+      description: '当前提示词较长，可能影响AI处理效率，建议适当精简',
+      level: 'warning'
+    })
+  }
+  
+  // 结构检查
+  if (!content.includes('【任务提取指南】')) {
+    suggestions.push({
+      type: 'structure',
+      title: '缺少任务提取指南',
+      description: '建议添加详细的任务提取指导，提高AI理解准确性',
+      level: 'error'
+    })
+  }
+  
+  // 示例检查
+  if (!content.includes('示例') && !content.includes('例如')) {
+    suggestions.push({
+      type: 'examples',
+      title: '建议添加示例',
+      description: '添加具体示例可以帮助AI更好地理解期望的输出格式',
+      level: 'info'
+    })
+  }
+  
+  return suggestions
+})
+
+// 方法定义
+
+/**
+ * 复制全部内容
+ */
+const copyContent = async () => {
+  try {
+    await navigator.clipboard.writeText(props.content)
+    message.success('提示词已复制到剪贴板')
+    emit('copy', props.content)
+  } catch (error) {
+    message.error('复制失败')
+  }
+}
+
+/**
+ * 下载提示词
+ */
+const downloadPrompt = () => {
+  const blob = new Blob([props.content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `豆包增强提示词_${new Date().toISOString().slice(0, 10)}.txt`
+  link.click()
+  URL.revokeObjectURL(url)
+  message.success('提示词已下载')
+}
+
+/**
+ * 切换行号显示
+ */
+const toggleLineNumbers = () => {
+  showLineNumbers.value = !showLineNumbers.value
+}
+
+/**
+ * 切换自动换行
+ */
+const toggleWordWrap = () => {
+  wordWrap.value = !wordWrap.value
+}
+
+/**
+ * 复制指定区块
+ */
+const copySection = async (sectionType) => {
+  const content = props.content
+  let sectionContent = ''
+  
+  switch (sectionType) {
+    case 'header':
+      const headerMatch = content.match(/^[\s\S]*?(?=【申报书内容】)/)
+      sectionContent = headerMatch ? headerMatch[0] : ''
+      break
+    case 'json':
+      const jsonMatch = content.match(/```json[\s\S]*?```/)
+      sectionContent = jsonMatch ? jsonMatch[0] : ''
+      break
+    case 'guide':
+      const guideMatch = content.match(/【任务提取指南】[\s\S]*?(?=【|$)/)
+      sectionContent = guideMatch ? guideMatch[0] : ''
+      break
+    case 'notes':
+      const notesMatch = content.match(/【特别注意】[\s\S]*?(?=【|$)/)
+      sectionContent = notesMatch ? notesMatch[0] : ''
+      break
+  }
+  
+  if (sectionContent) {
+    try {
+      await navigator.clipboard.writeText(sectionContent)
+      message.success('区块内容已复制')
+    } catch (error) {
+      message.error('复制失败')
+    }
+  } else {
+    message.warning('未找到对应区块内容')
+  }
+}
+
+/**
+ * 打开豆包网站
+ */
+const openDoubao = () => {
+  window.open('https://www.doubao.com/chat/', '_blank')
+}
+</script>
+
+<style scoped>
+.prompt-preview {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.preview-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.prompt-stats {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.prompt-content {
+  margin-bottom: 24px;
+}
+
+.content-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+}
+
+.prompt-text {
+  display: flex;
+  border: 1px solid #e9ecef;
+  border-radius: 0 0 6px 6px;
+  background: #fff;
+  max-height: 400px;
+  overflow: auto;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+.prompt-text.word-wrap .content-text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.line-numbers {
+  background: #f8f9fa;
+  color: #999;
+  padding: 12px 8px;
+  margin: 0;
+  border-right: 1px solid #e9ecef;
+  user-select: none;
+  min-width: 50px;
+  text-align: right;
+}
+
+.content-text {
+  flex: 1;
+  padding: 12px;
+  margin: 0;
+  white-space: pre;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+.prompt-analysis {
+  margin-bottom: 24px;
+}
+
+.structure-analysis {
+  margin-bottom: 16px;
+}
+
+.sections-analysis {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-item {
+  padding: 12px;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.section-header h4 {
+  margin: 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.section-description {
+  margin: 0 0 8px 0;
+  color: #666;
+  font-size: 13px;
+}
+
+.section-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #999;
+}
+
+.validation-results {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.optimization-suggestions {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.quick-actions {
+  text-align: center;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .preview-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .content-toolbar {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .prompt-text {
+    flex-direction: column;
+  }
+  
+  .line-numbers {
+    border-right: none;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+</style>

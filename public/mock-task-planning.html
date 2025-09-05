@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>任务策划（静态预览）</title>
+  <style>
+    :root{
+      --primary:#234fa2;
+      --secondary:#4e7be6;
+      --bg:#f5f8ff;
+      --card:#fff;
+      --border:#e6eaf2;
+      --text:#333;
+      --muted:#8c8c8c;
+      --shadow:0 8px 24px rgba(35,79,162,0.12);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,'Microsoft YaHei',sans-serif;color:var(--text)}
+    .page{max-width:1200px;margin:0 auto;padding:20px}
+    .header{position:sticky;top:0;background:linear-gradient(135deg,#fff 60%, #f8fbff);z-index:5;border-bottom:1px solid var(--border)}
+    .title{font-size:20px;font-weight:700;color:var(--primary);letter-spacing:.5px}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:12px 0}
+    .stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;box-shadow:var(--shadow)}
+    .stat .k{font-size:12px;color:var(--muted)}
+    .stat .v{font-size:22px;font-weight:700;margin-top:6px}
+    .filters{display:flex;gap:8px;margin:8px 0}
+    .tag{padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#fff;color:#3a3a3a;font-size:12px;cursor:pointer}
+    .tag.active{border-color:var(--primary);color:var(--primary);background:linear-gradient(135deg,#f6faff,#eef4ff)}
+
+    .main{display:flex;gap:16px;margin-top:16px}
+    .col{background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:60vh}
+    .col.left{flex:1.2}
+    .col.right{flex:0.8}
+    .col .hd{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+    .col .hd .h{font-weight:700;color:var(--primary)}
+    .search{display:flex;gap:8px}
+    .search input{height:32px;border:1px solid var(--border);border-radius:6px;padding:0 10px}
+    .list{padding:10px;overflow:auto}
+
+    .task{border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;background:#fff;display:grid;grid-template-columns:1fr auto;gap:8px}
+    .task .name{font-weight:600}
+    .task .meta{display:flex;gap:6px;align-items:center;font-size:12px;color:#666}
+    .pill{border:1px solid var(--border);border-radius:999px;padding:2px 8px;font-size:12px;background:#fafbff}
+    .pill.blue{color:var(--primary);border-color:#d6e1ff}
+    .pill.red{color:#d4380d;border-color:#ffd6bf;background:#fff7e6}
+    .pill.green{color:#389e0d;border-color:#c2f0c2;background:#f6ffed}
+    .origin{font-size:11px;border-radius:4px;padding:2px 6px;background:#f0f5ff;color:#3f5fb6;border:1px solid #d6e4ff}
+
+    .member{border:1px solid var(--border);border-radius:10px;padding:10px;margin:10px;background:#fff}
+    .member .row{display:flex;justify-content:space-between;align-items:center}
+    .avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#cfd8ff,#e3ecff);display:inline-flex;align-items:center;justify-content:center;color:#2b4db8;font-weight:700}
+    .cap{font-size:12px;color:#666}
+    .load{height:6px;border-radius:999px;background:#f0f0f0;overflow:hidden;margin-top:8px}
+    .load .bar{height:100%;background:linear-gradient(90deg,#69c0ff,#4e7be6)}
+    .drop{margin-top:10px;border:1px dashed var(--border);border-radius:8px;padding:8px;background:#fafcff}
+    .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:999px;padding:3px 8px;margin:4px;background:#fff;font-size:12px}
+
+    .footer{position:sticky;bottom:0;background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(8px);border-top:1px solid var(--border);padding:10px;margin-top:16px}
+    .btns{display:flex;gap:10px;justify-content:flex-end}
+    .btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--border);background:#fff;cursor:pointer}
+    .btn.primary{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;border:none;box-shadow:var(--shadow)}
+    .hint{font-size:12px;color:#666;margin-top:6px}
+
+    @media (max-width:1024px){
+      .stats{grid-template-columns:repeat(2,1fr)}
+      .main{flex-direction:column}
+      .col.left,.col.right{flex:unset}
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="page" style="padding-top:12px;padding-bottom:10px;">
+      <div class="title">任务策划（融合视图）</div>
+      <div class="stats">
+        <div class="stat"><div class="k">总任务数</div><div class="v">48</div></div>
+        <div class="stat"><div class="k">未分配</div><div class="v" style="color:#d4380d">7</div></div>
+        <div class="stat"><div class="k">覆盖率</div><div class="v">85%</div></div>
+        <div class="stat"><div class="k">超负载成员</div><div class="v" style="color:#fa8c16">2</div></div>
+      </div>
+      <div class="filters">
+        <div class="tag active">全部</div>
+        <div class="tag">阶段A</div>
+        <div class="tag">阶段B</div>
+        <div class="tag">里程碑</div>
+        <div class="tag">高优先级</div>
+        <div class="tag">待分配</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page">
+    <div class="main">
+      <!-- 左侧：任务面板 -->
+      <div class="col left">
+        <div class="hd">
+          <div class="h">任务面板</div>
+          <div class="search">
+            <input placeholder="搜索任务/关键词" style="width:220px" />
+          </div>
+        </div>
+        <div class="list">
+          <div class="task">
+            <div>
+              <div class="name">铁泥物相组成及物化性质分析</div>
+              <div class="meta">
+                <span class="pill blue">阶段A</span>
+                <span class="pill green">优先级：高</span>
+                <span class="pill">工期：5天</span>
+                <span class="origin">来源：原文 置信度90%</span>
+              </div>
+            </div>
+            <div class="meta"><span class="tag">拆分</span><span class="tag">设置</span></div>
+          </div>
+          <div class="task">
+            <div>
+              <div class="name">溶剂热法改性及效能评价</div>
+              <div class="meta">
+                <span class="pill blue">阶段B</span>
+                <span class="pill">优先级：中</span>
+                <span class="pill">工期：8天</span>
+                <span class="origin" style="background:#fff7e6;border-color:#ffe7ba;color:#d46b08">来源：推理</span>
+              </div>
+            </div>
+            <div class="meta"><span class="tag">拆分</span><span class="tag">设置</span></div>
+          </div>
+          <div class="task">
+            <div>
+              <div class="name">Co-Fe/SiO₂物理化学性质分析报告</div>
+              <div class="meta">
+                <span class="pill blue">阶段C</span>
+                <span class="pill">优先级：低</span>
+                <span class="pill">工期：3天</span>
+                <span class="origin" style="background:#fff0f6;border-color:#ffadd2;color:#c41d7f">来源：生成</span>
+              </div>
+            </div>
+            <div class="meta"><span class="tag">拆分</span><span class="tag">设置</span></div>
+          </div>
+          <!-- ... 更多任务项 ... -->
+        </div>
+      </div>
+
+      <!-- 右侧：人员面板 -->
+      <div class="col right">
+        <div class="hd">
+          <div class="h">人员面板</div>
+          <div class="search"><input placeholder="搜索成员/角色" style="width:180px" /></div>
+        </div>
+        <div class="list">
+          <div class="member">
+            <div class="row">
+              <div style="display:flex;align-items:center;gap:8px"><span class="avatar">张</span><b>张三</b><span class="pill" style="margin-left:6px">技术负责人</span></div>
+              <div class="cap">8/10 天</div>
+            </div>
+            <div class="load"><div class="bar" style="width:80%"></div></div>
+            <div class="drop">
+              <span class="chip">铁泥物相组成分析</span>
+              <span class="chip">溶剂热法改性</span>
+            </div>
+          </div>
+
+          <div class="member">
+            <div class="row">
+              <div style="display:flex;align-items:center;gap:8px"><span class="avatar">李</span><b>李四</b><span class="pill" style="margin-left:6px">实验工程师</span></div>
+              <div class="cap" style="color:#d4380d">12/10 天</div>
+            </div>
+            <div class="load"><div class="bar" style="width:120%;background:linear-gradient(90deg,#ff7875,#ff4d4f)"></div></div>
+            <div class="drop">
+              <span class="chip">样本采集与预处理</span>
+            </div>
+          </div>
+
+          <div class="member">
+            <div class="row">
+              <div style="display:flex;align-items:center;gap:8px"><span class="avatar">王</span><b>王五</b><span class="pill" style="margin-left:6px">数据分析</span></div>
+              <div class="cap">2/8 天</div>
+            </div>
+            <div class="load"><div class="bar" style="width:25%"></div></div>
+            <div class="drop">
+              <span class="chip">性能评价报告撰写</span>
+            </div>
+          </div>
+
+          <!-- ... 更多成员卡片 ... -->
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="btns">
+        <button class="btn">保存草稿</button>
+        <button class="btn">校验并提交</button>
+        <button class="btn primary">下一步</button>
+      </div>
+      <div class="hint">提示：可从左侧任务拖拽到右侧成员；超负载成员会标红提示。</div>
+    </div>
+  </div>
+</body>
+</html>
+
+

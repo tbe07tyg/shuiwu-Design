@@ -1,0 +1,417 @@
+<!--
+ * @file 豆包解析指南组件
+ * @description 为用户提供豆包AI解析的详细操作指南
+ * @author 科研管理系统
+ * @version 3.0.0
+ * @date 2025-01-29
+-->
+<template>
+  <div class="doubao-guide">
+    <!-- 操作流程 -->
+    <div class="guide-section">
+      <h3>🚀 操作流程</h3>
+      <a-steps :current="currentStep" direction="vertical" size="small">
+        <a-step title="复制增强提示词">
+          <template #description>
+            <div class="step-content">
+              <p>点击"复制增强提示词（含任务提取）"按钮，系统会自动生成包含申报书内容的完整提示词并复制到剪贴板。</p>
+              <a-alert message="提示" type="info" show-icon>
+                <template #description>
+                  增强版提示词包含了专门的任务提取指令，豆包会自动识别和拆解项目任务。
+                </template>
+              </a-alert>
+            </div>
+          </template>
+        </a-step>
+        
+        <a-step title="打开豆包AI">
+          <template #description>
+            <div class="step-content">
+              <p>点击"打开豆包网页版"按钮，或手动访问 <a href="https://www.doubao.com/chat/" target="_blank">豆包官网</a></p>
+              <div class="action-buttons">
+                <a-button size="small" @click="openDoubao">
+                  <LinkOutlined />
+                  打开豆包网页版
+                </a-button>
+              </div>
+            </div>
+          </template>
+        </a-step>
+        
+        <a-step title="粘贴并发送">
+          <template #description>
+            <div class="step-content">
+              <p>在豆包对话框中粘贴提示词（Ctrl+V），然后发送给豆包进行解析。</p>
+              <img src="/images/doubao-paste-demo.png" alt="粘贴示例" class="demo-image" />
+            </div>
+          </template>
+        </a-step>
+        
+        <a-step title="等待解析完成">
+          <template #description>
+            <div class="step-content">
+              <p>豆包会自动解析申报书内容并提取项目任务，通常需要1-3分钟。</p>
+              <a-progress :percent="analysisProgress" :status="analysisStatus" />
+            </div>
+          </template>
+        </a-step>
+        
+        <a-step title="复制解析结果">
+          <template #description>
+            <div class="step-content">
+              <p>豆包解析完成后，复制返回的JSON格式结果。</p>
+              <a-alert message="注意" type="warning" show-icon>
+                <template #description>
+                  请确保复制完整的JSON内容，包括开头的 { 和结尾的 }
+                </template>
+              </a-alert>
+            </div>
+          </template>
+        </a-step>
+        
+        <a-step title="导入到系统">
+          <template #description>
+            <div class="step-content">
+              <p>回到系统，点击"导入豆包解析结果"，粘贴JSON内容并导入。</p>
+              <div class="action-buttons">
+                <a-button size="small" type="primary" @click="goToImport">
+                  <ImportOutlined />
+                  去导入结果
+                </a-button>
+              </div>
+            </div>
+          </template>
+        </a-step>
+      </a-steps>
+    </div>
+
+    <!-- 常见问题 -->
+    <div class="guide-section">
+      <h3>❓ 常见问题</h3>
+      <a-collapse>
+        <a-collapse-panel key="1" header="豆包返回的不是JSON格式怎么办？">
+          <p>如果豆包返回的内容不是标准JSON格式，请尝试以下方法：</p>
+          <ul>
+            <li>在提示词末尾强调"请严格按照JSON格式返回"</li>
+            <li>重新发送提示词，有时豆包需要多次尝试</li>
+            <li>手动整理豆包返回的内容为JSON格式</li>
+          </ul>
+        </a-collapse-panel>
+        
+        <a-collapse-panel key="2" header="豆包提取的任务数量太少怎么办？">
+          <p>如果提取的任务数量不够，可以尝试：</p>
+          <ul>
+            <li>在提示词中增加"请尽可能详细地拆解任务"</li>
+            <li>针对特定区域（如实施方案）单独提取任务</li>
+            <li>手动补充遗漏的任务</li>
+          </ul>
+        </a-collapse-panel>
+        
+        <a-collapse-panel key="3" header="任务依赖关系不准确怎么办？">
+          <p>豆包AI可能无法完全准确识别任务依赖关系，建议：</p>
+          <ul>
+            <li>导入结果后手动调整依赖关系</li>
+            <li>在任务分配阶段进一步完善</li>
+            <li>结合项目实际情况进行优化</li>
+          </ul>
+        </a-collapse-panel>
+        
+        <a-collapse-panel key="4" header="豆包解析速度很慢怎么办？">
+          <p>如果解析速度较慢，可能的原因和解决方法：</p>
+          <ul>
+            <li>申报书内容过长，可以分段解析</li>
+            <li>豆包服务器繁忙，稍后重试</li>
+            <li>网络连接问题，检查网络状态</li>
+          </ul>
+        </a-collapse-panel>
+      </a-collapse>
+    </div>
+
+    <!-- 最佳实践 -->
+    <div class="guide-section">
+      <h3>💡 最佳实践</h3>
+      <div class="best-practices">
+        <div class="practice-item">
+          <div class="practice-icon">🎯</div>
+          <div class="practice-content">
+            <h4>明确任务粒度</h4>
+            <p>建议任务工期控制在1-30天，过大的任务应该进一步拆分。</p>
+          </div>
+        </div>
+        
+        <div class="practice-item">
+          <div class="practice-icon">🔗</div>
+          <div class="practice-content">
+            <h4>检查依赖关系</h4>
+            <p>导入后仔细检查任务间的依赖关系，确保逻辑合理。</p>
+          </div>
+        </div>
+        
+        <div class="practice-item">
+          <div class="practice-icon">📋</div>
+          <div class="practice-content">
+            <h4>完善交付物</h4>
+            <p>为每个任务明确具体的交付物，便于后续验收。</p>
+          </div>
+        </div>
+        
+        <div class="practice-item">
+          <div class="practice-icon">⚡</div>
+          <div class="practice-content">
+            <h4>设置优先级</h4>
+            <p>根据项目目标和技术难度合理设置任务优先级。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 示例结果 -->
+    <div class="guide-section">
+      <h3>📊 示例结果</h3>
+      <a-tabs>
+        <a-tab-pane key="json" tab="JSON格式示例">
+          <pre class="json-example">{{ jsonExample }}</pre>
+        </a-tab-pane>
+        
+        <a-tab-pane key="tasks" tab="任务提取示例">
+          <div class="task-examples">
+            <div class="task-example">
+              <h4>🛠️ 实施任务示例</h4>
+              <a-tag color="blue">需求分析和系统设计</a-tag>
+              <a-tag color="blue">数据库设计与实现</a-tag>
+              <a-tag color="blue">前端界面开发</a-tag>
+            </div>
+            
+            <div class="task-example">
+              <h4>🔬 技术任务示例</h4>
+              <a-tag color="green">核心算法研发</a-tag>
+              <a-tag color="green">API接口开发</a-tag>
+              <a-tag color="green">性能优化</a-tag>
+            </div>
+            
+            <div class="task-example">
+              <h4>📅 里程碑示例</h4>
+              <a-tag color="orange">原型系统完成</a-tag>
+              <a-tag color="orange">系统测试完成</a-tag>
+              <a-tag color="orange">项目验收</a-tag>
+            </div>
+          </div>
+        </a-tab-pane>
+      </a-tabs>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="guide-actions">
+      <a-space>
+        <a-button type="primary" @click="startGuide">
+          <PlayCircleOutlined />
+          开始解析
+        </a-button>
+        <a-button @click="$emit('close')">
+          关闭指南
+        </a-button>
+      </a-space>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { 
+  LinkOutlined, 
+  ImportOutlined, 
+  PlayCircleOutlined 
+} from '@ant-design/icons-vue'
+
+// Emits
+const emit = defineEmits(['close', 'startAnalysis', 'goToImport'])
+
+// 响应式数据
+const currentStep = ref(0)
+const analysisProgress = ref(0)
+const analysisStatus = ref('normal')
+
+// JSON示例
+const jsonExample = ref(`{
+  "basicInfo": {
+    "projectName": "智能水务管理系统",
+    "applicantUnit": "华北水利水电大学",
+    "leader": "张教授"
+  },
+  "taskExtraction": {
+    "implementationTasks": [
+      {
+        "id": "impl_001",
+        "name": "需求分析和系统设计",
+        "description": "进行详细的需求调研，完成系统架构设计",
+        "type": "implementation",
+        "priority": "high",
+        "estimatedDuration": 15,
+        "deliverables": ["需求规格说明书", "系统设计文档"]
+      }
+    ],
+    "technicalTasks": [
+      {
+        "id": "tech_001",
+        "name": "核心算法研发",
+        "description": "研发水务数据分析的核心算法",
+        "type": "technical",
+        "priority": "high",
+        "estimatedDuration": 30,
+        "technicalDifficulty": "high",
+        "keyTechnologies": ["机器学习", "数据挖掘"]
+      }
+    ]
+  }
+}`)
+
+// 方法定义
+
+/**
+ * 打开豆包网站
+ */
+const openDoubao = () => {
+  window.open('https://www.doubao.com/chat/', '_blank')
+}
+
+/**
+ * 开始解析指南
+ */
+const startGuide = () => {
+  currentStep.value = 0
+  emit('startAnalysis')
+  emit('close')
+}
+
+/**
+ * 跳转到导入
+ */
+const goToImport = () => {
+  emit('goToImport')
+  emit('close')
+}
+
+// 模拟解析进度
+const simulateProgress = () => {
+  let progress = 0
+  const timer = setInterval(() => {
+    progress += 10
+    analysisProgress.value = progress
+    
+    if (progress >= 100) {
+      clearInterval(timer)
+      analysisStatus.value = 'success'
+    }
+  }, 200)
+}
+</script>
+
+<style scoped>
+.doubao-guide {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.guide-section {
+  margin-bottom: 24px;
+}
+
+.guide-section h3 {
+  color: #1890ff;
+  margin-bottom: 16px;
+}
+
+.step-content {
+  margin-top: 8px;
+}
+
+.action-buttons {
+  margin-top: 8px;
+}
+
+.demo-image {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.best-practices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.practice-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #1890ff;
+}
+
+.practice-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.practice-content h4 {
+  margin: 0 0 8px 0;
+  color: #333;
+}
+
+.practice-content p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.json-example {
+  background: #f6f8fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 6px;
+  padding: 16px;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-x: auto;
+  max-height: 300px;
+}
+
+.task-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.task-example h4 {
+  margin: 0 0 8px 0;
+  color: #333;
+}
+
+.task-example .ant-tag {
+  margin: 4px 8px 4px 0;
+}
+
+.guide-actions {
+  margin-top: 24px;
+  text-align: center;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .best-practices {
+    grid-template-columns: 1fr;
+  }
+  
+  .practice-item {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+</style>

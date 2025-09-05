@@ -1,0 +1,578 @@
+<!--
+ * @file 导入豆包解析结果组件
+ * @description 用于导入和验证豆包AI解析的JSON结果
+ * @author 科研管理系统
+ * @version 3.0.0
+ * @date 2025-01-29
+-->
+<template>
+  <div class="import-doubao-result">
+    <!-- 导入说明 -->
+    <a-alert
+      message="导入豆包解析结果"
+      type="info"
+      show-icon
+      style="margin-bottom: 16px"
+    >
+      <template #description>
+        <div class="import-guide">
+          <p>请将豆包返回的完整JSON结果粘贴到下方文本框中，系统将自动验证格式并提取任务信息。</p>
+          <ul>
+            <li>确保复制完整的JSON内容（包括开头的 { 和结尾的 } ）</li>
+            <li>JSON格式必须正确，否则无法导入</li>
+            <li>系统会自动验证数据结构的完整性</li>
+          </ul>
+        </div>
+      </template>
+    </a-alert>
+
+    <!-- JSON输入区域 -->
+    <div class="json-input-section">
+      <div class="input-header">
+        <h4>📥 粘贴JSON内容</h4>
+        <a-space>
+          <a-button size="small" @click="pasteFromClipboard">
+            <CopyOutlined />
+            从剪贴板粘贴
+          </a-button>
+          <a-button size="small" @click="clearInput">
+            <ClearOutlined />
+            清空
+          </a-button>
+          <a-button size="small" @click="formatJson" :disabled="!jsonContent">
+            <FormatPainterOutlined />
+            格式化
+          </a-button>
+        </a-space>
+      </div>
+      
+      <a-textarea
+        v-model:value="jsonContent"
+        placeholder="请粘贴豆包返回的JSON结果..."
+        :rows="12"
+        class="json-textarea"
+        @input="handleInput"
+      />
+      
+      <!-- 字符统计 -->
+      <div class="input-stats">
+        <a-space>
+          <span class="stat-item">字符数: {{ jsonContent.length }}</span>
+          <span class="stat-item">行数: {{ lineCount }}</span>
+          <span class="stat-item" v-if="estimatedTasks > 0">预估任务: {{ estimatedTasks }}个</span>
+        </a-space>
+      </div>
+    </div>
+
+    <!-- 验证结果 -->
+    <div class="validation-section" v-if="validationResult">
+      <h4>🔍 验证结果</h4>
+      <a-alert
+        :message="validationResult.valid ? 'JSON格式验证通过' : 'JSON格式验证失败'"
+        :description="validationResult.message"
+        :type="validationResult.valid ? 'success' : 'error'"
+        show-icon
+        style="margin-bottom: 16px"
+      />
+      
+      <!-- 详细验证信息 -->
+      <div v-if="validationResult.valid && parsedData" class="validation-details">
+        <a-descriptions title="解析结果预览" :column="2" bordered size="small">
+          <a-descriptions-item label="项目名称">
+            {{ parsedData.basicInfo?.projectName || '未填写' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="申请单位">
+            {{ parsedData.basicInfo?.applicantUnit || '未填写' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="项目负责人">
+            {{ parsedData.basicInfo?.leader || '未填写' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="总任务数">
+            {{ getTotalTasks() }}个
+          </a-descriptions-item>
+        </a-descriptions>
+        
+        <!-- 任务统计 -->
+        <div class="task-statistics" v-if="parsedData.taskExtraction">
+          <h5>📊 任务统计</h5>
+          <a-row :gutter="16">
+            <a-col :span="6">
+              <a-statistic
+                title="实施任务"
+                :value="parsedData.taskExtraction.implementationTasks?.length || 0"
+                :value-style="{ color: '#1890ff' }"
+              />
+            </a-col>
+            <a-col :span="6">
+              <a-statistic
+                title="技术任务"
+                :value="parsedData.taskExtraction.technicalTasks?.length || 0"
+                :value-style="{ color: '#52c41a' }"
+              />
+            </a-col>
+            <a-col :span="6">
+              <a-statistic
+                title="里程碑"
+                :value="parsedData.taskExtraction.milestoneTasks?.length || 0"
+                :value-style="{ color: '#faad14' }"
+              />
+            </a-col>
+            <a-col :span="6">
+              <a-statistic
+                title="研究任务"
+                :value="parsedData.taskExtraction.researchTasks?.length || 0"
+                :value-style="{ color: '#722ed1' }"
+              />
+            </a-col>
+          </a-row>
+        </div>
+        
+        <!-- 任务预览 -->
+        <div class="task-preview" v-if="parsedData.taskExtraction">
+          <h5>🎯 任务预览</h5>
+          <a-tabs size="small">
+            <a-tab-pane key="implementation" tab="实施任务" v-if="parsedData.taskExtraction.implementationTasks?.length > 0">
+              <TaskPreviewList :tasks="parsedData.taskExtraction.implementationTasks" type="implementation" />
+            </a-tab-pane>
+            
+            <a-tab-pane key="technical" tab="技术任务" v-if="parsedData.taskExtraction.technicalTasks?.length > 0">
+              <TaskPreviewList :tasks="parsedData.taskExtraction.technicalTasks" type="technical" />
+            </a-tab-pane>
+            
+            <a-tab-pane key="milestone" tab="里程碑" v-if="parsedData.taskExtraction.milestoneTasks?.length > 0">
+              <TaskPreviewList :tasks="parsedData.taskExtraction.milestoneTasks" type="milestone" />
+            </a-tab-pane>
+            
+            <a-tab-pane key="research" tab="研究任务" v-if="parsedData.taskExtraction.researchTasks?.length > 0">
+              <TaskPreviewList :tasks="parsedData.taskExtraction.researchTasks" type="research" />
+            </a-tab-pane>
+          </a-tabs>
+        </div>
+      </div>
+    </div>
+
+    <!-- 导入选项 -->
+    <div class="import-options" v-if="validationResult?.valid">
+      <h4>⚙️ 导入选项</h4>
+      <a-form layout="vertical">
+        <a-form-item label="导入模式">
+          <a-radio-group v-model:value="importMode">
+            <a-radio value="replace">完全替换现有数据</a-radio>
+            <a-radio value="merge">合并到现有数据</a-radio>
+          </a-radio-group>
+        </a-form-item>
+        
+        <a-form-item label="任务处理">
+          <a-checkbox-group v-model:value="taskOptions">
+            <a-checkbox value="validateDependencies">验证任务依赖关系</a-checkbox>
+            <a-checkbox value="autoAssignIds">自动分配任务ID</a-checkbox>
+            <a-checkbox value="calculateDuration">重新计算项目工期</a-checkbox>
+          </a-checkbox-group>
+        </a-form-item>
+      </a-form>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="import-actions">
+      <a-space>
+        <a-button 
+          type="primary" 
+          @click="validateJson"
+          :loading="validating"
+          :disabled="!jsonContent.trim()"
+        >
+          <CheckCircleOutlined />
+          验证JSON格式
+        </a-button>
+        
+        <a-button 
+          @click="loadExample"
+        >
+          <FileTextOutlined />
+          加载示例
+        </a-button>
+        
+        <a-button 
+          @click="clearAll"
+        >
+          <ClearOutlined />
+          清空所有
+        </a-button>
+      </a-space>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, watch } from 'vue'
+import { message } from 'ant-design-vue'
+import { 
+  CopyOutlined, 
+  ClearOutlined, 
+  FormatPainterOutlined,
+  CheckCircleOutlined,
+  FileTextOutlined
+} from '@ant-design/icons-vue'
+import TaskPreviewList from './TaskPreviewList.vue'
+
+// Props
+const props = defineProps({
+  validationResult: {
+    type: Object,
+    default: null
+  }
+})
+
+// Emits
+const emit = defineEmits(['update:jsonContent', 'validate'])
+
+// 响应式数据
+const jsonContent = ref('')
+const validating = ref(false)
+const parsedData = ref(null)
+const importMode = ref('replace')
+const taskOptions = ref(['validateDependencies', 'autoAssignIds'])
+
+// 计算属性
+const lineCount = computed(() => {
+  return jsonContent.value.split('\n').length
+})
+
+const estimatedTasks = computed(() => {
+  const content = jsonContent.value.toLowerCase()
+  const taskMatches = content.match(/"id":\s*"(impl_|tech_|mile_|research_)/g)
+  return taskMatches ? taskMatches.length : 0
+})
+
+// 监听器
+watch(jsonContent, (newValue) => {
+  emit('update:jsonContent', newValue)
+})
+
+watch(() => props.validationResult, (newResult) => {
+  if (newResult?.valid && newResult.parsedData) {
+    parsedData.value = newResult.parsedData
+  }
+})
+
+// 方法定义
+
+/**
+ * 处理输入
+ */
+const handleInput = () => {
+  // 重置验证结果
+  if (parsedData.value) {
+    parsedData.value = null
+  }
+}
+
+/**
+ * 从剪贴板粘贴
+ */
+const pasteFromClipboard = async () => {
+  try {
+    const text = await navigator.clipboard.readText()
+    jsonContent.value = text
+    message.success('内容已从剪贴板粘贴')
+  } catch (error) {
+    message.error('无法访问剪贴板，请手动粘贴')
+  }
+}
+
+/**
+ * 清空输入
+ */
+const clearInput = () => {
+  jsonContent.value = ''
+  parsedData.value = null
+}
+
+/**
+ * 格式化JSON
+ */
+const formatJson = () => {
+  try {
+    const parsed = JSON.parse(jsonContent.value)
+    jsonContent.value = JSON.stringify(parsed, null, 2)
+    message.success('JSON格式化完成')
+  } catch (error) {
+    message.error('JSON格式错误，无法格式化')
+  }
+}
+
+/**
+ * 验证JSON
+ */
+const validateJson = () => {
+  if (!jsonContent.value.trim()) {
+    message.warning('请先输入JSON内容')
+    return
+  }
+  
+  validating.value = true
+  
+  // 延迟执行以显示加载状态
+  setTimeout(() => {
+    try {
+      const parsed = JSON.parse(jsonContent.value)
+      
+      // 触发父组件验证
+      emit('validate', {
+        content: jsonContent.value,
+        parsed,
+        options: {
+          mode: importMode.value,
+          taskOptions: taskOptions.value
+        }
+      })
+      
+    } catch (error) {
+      message.error('JSON解析失败：' + error.message)
+    } finally {
+      validating.value = false
+    }
+  }, 500)
+}
+
+/**
+ * 加载示例
+ */
+const loadExample = () => {
+  const example = {
+    "basicInfo": {
+      "projectName": "智能水务管理系统研发",
+      "applicantUnit": "华北水利水电大学",
+      "leader": "张教授",
+      "cooperativeUnit": "某科技公司",
+      "applicationDate": "2025-01-01"
+    },
+    "researchContent": {
+      "basisAndSignificance": "随着城市化进程的加快，传统水务管理面临诸多挑战...",
+      "implementation": {
+        "plan": "本项目采用分阶段实施的方式，首先进行需求分析...",
+        "keyTechnologies": "物联网技术、大数据分析、人工智能算法...",
+        "technicalRoute": "数据采集 → 数据处理 → 智能分析 → 决策支持",
+        "expectedResults": "建成智能水务管理平台，实现水务数据的智能化管理"
+      },
+      "existingConditions": "项目团队具备丰富的水务管理和信息化建设经验...",
+      "expectedBenefits": "提高水务管理效率30%，降低运营成本20%",
+      "schedule": "项目总工期18个月，分为三个阶段实施"
+    },
+    "taskExtraction": {
+      "implementationTasks": [
+        {
+          "id": "impl_001",
+          "name": "需求分析和系统设计",
+          "description": "进行详细的需求调研，完成系统架构设计和技术选型",
+          "type": "implementation",
+          "priority": "high",
+          "estimatedDuration": 15,
+          "dependencies": [],
+          "deliverables": ["需求规格说明书", "系统设计文档", "技术选型报告"],
+          "source": "实施方案"
+        },
+        {
+          "id": "impl_002",
+          "name": "数据库设计与实现",
+          "description": "设计并实现水务数据的存储结构",
+          "type": "implementation",
+          "priority": "high",
+          "estimatedDuration": 10,
+          "dependencies": ["impl_001"],
+          "deliverables": ["数据库设计文档", "数据库脚本"],
+          "source": "实施方案"
+        }
+      ],
+      "technicalTasks": [
+        {
+          "id": "tech_001",
+          "name": "核心算法研发",
+          "description": "研发水务数据分析的核心算法",
+          "type": "technical",
+          "priority": "high",
+          "estimatedDuration": 30,
+          "dependencies": ["impl_001"],
+          "technicalDifficulty": "high",
+          "keyTechnologies": ["机器学习", "数据挖掘", "算法优化"],
+          "source": "技术路线"
+        }
+      ],
+      "milestoneTasks": [
+        {
+          "id": "mile_001",
+          "name": "原型系统完成",
+          "description": "完成系统原型开发，实现核心功能",
+          "type": "milestone",
+          "priority": "high",
+          "plannedDate": "2025-06-30",
+          "dependencies": ["impl_002", "tech_001"],
+          "criteria": ["原型系统可运行", "核心功能验证通过"],
+          "source": "进度计划"
+        }
+      ],
+      "researchTasks": [
+        {
+          "id": "research_001",
+          "name": "关键技术攻关",
+          "description": "针对项目中的关键技术难点进行深入研究",
+          "type": "research",
+          "priority": "medium",
+          "estimatedDuration": 20,
+          "researchMethod": "理论分析+实验验证",
+          "expectedOutcome": "技术可行性报告",
+          "source": "技术关键"
+        }
+      ]
+    },
+    "taskSummary": {
+      "totalTasks": 5,
+      "tasksByType": {
+        "implementation": 2,
+        "technical": 1,
+        "milestone": 1,
+        "research": 1
+      },
+      "estimatedTotalDuration": 75,
+      "criticalPath": ["impl_001", "tech_001", "mile_001"],
+      "riskTasks": ["tech_001"]
+    }
+  }
+  
+  jsonContent.value = JSON.stringify(example, null, 2)
+  message.success('示例数据已加载')
+}
+
+/**
+ * 清空所有
+ */
+const clearAll = () => {
+  jsonContent.value = ''
+  parsedData.value = null
+  importMode.value = 'replace'
+  taskOptions.value = ['validateDependencies', 'autoAssignIds']
+}
+
+/**
+ * 获取总任务数
+ */
+const getTotalTasks = () => {
+  if (!parsedData.value?.taskExtraction) return 0
+  
+  const extraction = parsedData.value.taskExtraction
+  return (
+    (extraction.implementationTasks?.length || 0) +
+    (extraction.technicalTasks?.length || 0) +
+    (extraction.milestoneTasks?.length || 0) +
+    (extraction.researchTasks?.length || 0)
+  )
+}
+</script>
+
+<style scoped>
+.import-doubao-result {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.import-guide ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.json-input-section {
+  margin-bottom: 24px;
+}
+
+.input-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.input-header h4 {
+  margin: 0;
+  color: #333;
+}
+
+.json-textarea {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.input-stats {
+  margin-top: 8px;
+  text-align: right;
+}
+
+.stat-item {
+  font-size: 12px;
+  color: #999;
+  margin-left: 16px;
+}
+
+.validation-section {
+  margin-bottom: 24px;
+}
+
+.validation-section h4 {
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.validation-details {
+  margin-top: 16px;
+}
+
+.task-statistics {
+  margin: 16px 0;
+}
+
+.task-statistics h5 {
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.task-preview {
+  margin-top: 16px;
+}
+
+.task-preview h5 {
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.import-options {
+  margin-bottom: 24px;
+}
+
+.import-options h4 {
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.import-actions {
+  text-align: center;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .input-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .json-textarea {
+    font-size: 11px;
+  }
+  
+  .input-stats {
+    text-align: left;
+  }
+}
+</style>

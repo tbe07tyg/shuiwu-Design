@@ -1,0 +1,538 @@
+<!--
+ * @file 任务预览列表组件
+ * @description 用于预览豆包提取的任务列表
+ * @author 科研管理系统
+ * @version 3.0.0
+ * @date 2025-01-29
+-->
+<template>
+  <div class="task-preview-list">
+    <div v-if="tasks.length === 0" class="empty-tasks">
+      <a-empty description="暂无任务" image="simple" />
+    </div>
+    
+    <div v-else class="task-items">
+      <div 
+        v-for="(task, index) in tasks" 
+        :key="task.id || index"
+        class="task-item"
+        :class="`priority-${task.priority || 'medium'}`"
+      >
+        <!-- 任务头部 -->
+        <div class="task-header">
+          <div class="task-title">
+            <span class="task-number">{{ index + 1 }}.</span>
+            <span class="task-name">{{ task.name || '未命名任务' }}</span>
+          </div>
+          
+          <div class="task-badges">
+            <a-tag :color="getTypeColor(task.type)" size="small">
+              {{ getTypeText(task.type) }}
+            </a-tag>
+            <a-tag :color="getPriorityColor(task.priority)" size="small">
+              {{ getPriorityText(task.priority) }}
+            </a-tag>
+          </div>
+        </div>
+        
+        <!-- 任务描述 -->
+        <div class="task-description" v-if="task.description">
+          <p>{{ task.description }}</p>
+        </div>
+        
+        <!-- 任务详情 -->
+        <div class="task-details">
+          <a-row :gutter="16">
+            <!-- 基础信息 -->
+            <a-col :span="12">
+              <div class="detail-section">
+                <h5>📋 基础信息</h5>
+                <div class="detail-items">
+                  <div class="detail-item" v-if="task.estimatedDuration">
+                    <span class="label">预估工期：</span>
+                    <span class="value">{{ task.estimatedDuration }}天</span>
+                  </div>
+                  <div class="detail-item" v-if="task.source">
+                    <span class="label">来源：</span>
+                    <span class="value">{{ task.source }}</span>
+                  </div>
+                  <div class="detail-item" v-if="task.technicalDifficulty">
+                    <span class="label">技术难度：</span>
+                    <a-tag :color="getDifficultyColor(task.technicalDifficulty)" size="small">
+                      {{ getDifficultyText(task.technicalDifficulty) }}
+                    </a-tag>
+                  </div>
+                  <div class="detail-item" v-if="task.plannedDate">
+                    <span class="label">计划日期：</span>
+                    <span class="value">{{ task.plannedDate }}</span>
+                  </div>
+                </div>
+              </div>
+            </a-col>
+            
+            <!-- 依赖关系 -->
+            <a-col :span="12">
+              <div class="detail-section">
+                <h5>🔗 依赖关系</h5>
+                <div class="detail-items">
+                  <div class="detail-item" v-if="task.dependencies && task.dependencies.length > 0">
+                    <span class="label">依赖任务：</span>
+                    <div class="dependency-tags">
+                      <a-tag 
+                        v-for="depId in task.dependencies" 
+                        :key="depId"
+                        color="blue"
+                        size="small"
+                      >
+                        {{ depId }}
+                      </a-tag>
+                    </div>
+                  </div>
+                  <div class="detail-item" v-else>
+                    <span class="value text-muted">无依赖任务</span>
+                  </div>
+                </div>
+              </div>
+            </a-col>
+          </a-row>
+        </div>
+        
+        <!-- 交付物 -->
+        <div class="deliverables-section" v-if="task.deliverables && task.deliverables.length > 0">
+          <h5>📦 交付物</h5>
+          <div class="deliverable-tags">
+            <a-tag 
+              v-for="deliverable in task.deliverables" 
+              :key="deliverable"
+              color="purple"
+              size="small"
+            >
+              {{ deliverable }}
+            </a-tag>
+          </div>
+        </div>
+        
+        <!-- 关键技术 -->
+        <div class="technologies-section" v-if="task.keyTechnologies && task.keyTechnologies.length > 0">
+          <h5>🔬 关键技术</h5>
+          <div class="technology-tags">
+            <a-tag 
+              v-for="tech in task.keyTechnologies" 
+              :key="tech"
+              color="cyan"
+              size="small"
+            >
+              {{ tech }}
+            </a-tag>
+          </div>
+        </div>
+        
+        <!-- 验收标准 -->
+        <div class="criteria-section" v-if="task.criteria && task.criteria.length > 0">
+          <h5>✅ 验收标准</h5>
+          <ul class="criteria-list">
+            <li v-for="criterion in task.criteria" :key="criterion">
+              {{ criterion }}
+            </li>
+          </ul>
+        </div>
+        
+        <!-- 研究方法和预期成果（研究任务特有） -->
+        <div v-if="task.type === 'research'" class="research-details">
+          <a-row :gutter="16">
+            <a-col :span="12" v-if="task.researchMethod">
+              <div class="detail-section">
+                <h5>🔍 研究方法</h5>
+                <p class="research-text">{{ task.researchMethod }}</p>
+              </div>
+            </a-col>
+            <a-col :span="12" v-if="task.expectedOutcome">
+              <div class="detail-section">
+                <h5>🎯 预期成果</h5>
+                <p class="research-text">{{ task.expectedOutcome }}</p>
+              </div>
+            </a-col>
+          </a-row>
+        </div>
+        
+        <!-- 操作按钮 -->
+        <div class="task-actions">
+          <a-space size="small">
+            <a-button size="small" @click="editTask(task)">
+              <EditOutlined />
+              编辑
+            </a-button>
+            <a-button size="small" @click="viewDetails(task)">
+              <InfoCircleOutlined />
+              详情
+            </a-button>
+            <a-button size="small" @click="copyTaskId(task.id)" v-if="task.id">
+              <CopyOutlined />
+              复制ID
+            </a-button>
+          </a-space>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 统计信息 -->
+    <div class="task-summary" v-if="tasks.length > 0">
+      <a-divider />
+      <a-row :gutter="16">
+        <a-col :span="6">
+          <a-statistic title="任务总数" :value="tasks.length" />
+        </a-col>
+        <a-col :span="6">
+          <a-statistic title="平均工期" :value="averageDuration" suffix="天" />
+        </a-col>
+        <a-col :span="6">
+          <a-statistic title="总工期" :value="totalDuration" suffix="天" />
+        </a-col>
+        <a-col :span="6">
+          <a-statistic title="有依赖" :value="tasksWithDependencies" suffix="个" />
+        </a-col>
+      </a-row>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+import { message } from 'ant-design-vue'
+import { 
+  EditOutlined, 
+  InfoCircleOutlined, 
+  CopyOutlined 
+} from '@ant-design/icons-vue'
+
+// Props
+const props = defineProps({
+  tasks: {
+    type: Array,
+    default: () => []
+  },
+  type: {
+    type: String,
+    default: 'general'
+  }
+})
+
+// Emits
+const emit = defineEmits(['editTask', 'viewDetails'])
+
+// 计算属性
+const averageDuration = computed(() => {
+  const tasksWithDuration = props.tasks.filter(task => task.estimatedDuration > 0)
+  if (tasksWithDuration.length === 0) return 0
+  
+  const total = tasksWithDuration.reduce((sum, task) => sum + task.estimatedDuration, 0)
+  return Math.round(total / tasksWithDuration.length)
+})
+
+const totalDuration = computed(() => {
+  return props.tasks.reduce((sum, task) => sum + (task.estimatedDuration || 0), 0)
+})
+
+const tasksWithDependencies = computed(() => {
+  return props.tasks.filter(task => task.dependencies && task.dependencies.length > 0).length
+})
+
+// 方法定义
+
+/**
+ * 获取任务类型颜色
+ */
+const getTypeColor = (type) => {
+  const colorMap = {
+    implementation: 'blue',
+    technical: 'green',
+    milestone: 'orange',
+    research: 'purple'
+  }
+  return colorMap[type] || 'default'
+}
+
+/**
+ * 获取任务类型文本
+ */
+const getTypeText = (type) => {
+  const textMap = {
+    implementation: '实施任务',
+    technical: '技术任务',
+    milestone: '里程碑',
+    research: '研究任务'
+  }
+  return textMap[type] || '其他'
+}
+
+/**
+ * 获取优先级颜色
+ */
+const getPriorityColor = (priority) => {
+  const colorMap = {
+    high: 'red',
+    medium: 'orange',
+    low: 'green'
+  }
+  return colorMap[priority] || 'default'
+}
+
+/**
+ * 获取优先级文本
+ */
+const getPriorityText = (priority) => {
+  const textMap = {
+    high: '高',
+    medium: '中',
+    low: '低'
+  }
+  return textMap[priority] || '中'
+}
+
+/**
+ * 获取技术难度颜色
+ */
+const getDifficultyColor = (difficulty) => {
+  const colorMap = {
+    high: 'red',
+    medium: 'orange',
+    low: 'green'
+  }
+  return colorMap[difficulty] || 'default'
+}
+
+/**
+ * 获取技术难度文本
+ */
+const getDifficultyText = (difficulty) => {
+  const textMap = {
+    high: '高',
+    medium: '中',
+    low: '低'
+  }
+  return textMap[difficulty] || '中'
+}
+
+/**
+ * 编辑任务
+ */
+const editTask = (task) => {
+  emit('editTask', task)
+}
+
+/**
+ * 查看详情
+ */
+const viewDetails = (task) => {
+  emit('viewDetails', task)
+}
+
+/**
+ * 复制任务ID
+ */
+const copyTaskId = async (taskId) => {
+  try {
+    await navigator.clipboard.writeText(taskId)
+    message.success('任务ID已复制到剪贴板')
+  } catch (error) {
+    message.error('复制失败')
+  }
+}
+</script>
+
+<style scoped>
+.task-preview-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.task-items {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.task-item {
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 16px;
+  background: #fff;
+  transition: all 0.3s ease;
+}
+
+.task-item:hover {
+  border-color: #1890ff;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+}
+
+.task-item.priority-high {
+  border-left: 4px solid #ff4d4f;
+}
+
+.task-item.priority-medium {
+  border-left: 4px solid #faad14;
+}
+
+.task-item.priority-low {
+  border-left: 4px solid #52c41a;
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.task-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-number {
+  font-weight: 600;
+  color: #1890ff;
+  min-width: 24px;
+}
+
+.task-name {
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+}
+
+.task-description {
+  margin-bottom: 12px;
+}
+
+.task-description p {
+  margin: 0;
+  color: #666;
+  line-height: 1.5;
+}
+
+.task-details {
+  margin-bottom: 12px;
+}
+
+.detail-section h5 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 13px;
+}
+
+.detail-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.detail-item .label {
+  color: #999;
+  min-width: 60px;
+}
+
+.detail-item .value {
+  color: #333;
+}
+
+.text-muted {
+  color: #999;
+}
+
+.dependency-tags,
+.deliverable-tags,
+.technology-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.deliverables-section,
+.technologies-section,
+.criteria-section {
+  margin-bottom: 12px;
+}
+
+.deliverables-section h5,
+.technologies-section h5,
+.criteria-section h5 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 13px;
+}
+
+.criteria-list {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 12px;
+}
+
+.criteria-list li {
+  margin: 2px 0;
+  color: #666;
+}
+
+.research-details {
+  margin-bottom: 12px;
+}
+
+.research-text {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.task-actions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+  text-align: right;
+}
+
+.task-summary {
+  margin-top: 16px;
+}
+
+.empty-tasks {
+  text-align: center;
+  padding: 40px 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .task-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .task-title {
+    width: 100%;
+  }
+  
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  
+  .detail-item .label {
+    min-width: auto;
+  }
+  
+  .task-actions {
+    text-align: left;
+  }
+}
+</style>

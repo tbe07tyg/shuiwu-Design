@@ -74,15 +74,20 @@
               </a-col>
               <a-col :xs="24" :md="12">
                 <a-form-item
-                  label="申请人"
+                  label="申请人(项目经理)"
                   name="applicant"
                   :rules="[{ required: true, message: '请输入申请人姓名' }]"
                 >
                   <a-input
                     v-model:value="formData.applicant"
-                    placeholder="请输入申请人姓名"
+                    placeholder="当前登录用户"
                     size="large"
+                    readonly
+                    style="background-color: #f5f5f5"
                   />
+                  <div style="margin-top: 4px; color: #666; font-size: 12px;">
+                    申请人即为项目经理，立项通过后将自动进入项目管理
+                  </div>
                 </a-form-item>
               </a-col>
             </a-row>
@@ -324,11 +329,11 @@ const pageDescription = computed(() => {
   }
 })
 
-// 表单数据
+// 表单数据 - 申请人默认为当前用户（项目经理）
 const formData = ref({
   year: '2024',
   projectName: '',
-  applicant: '',
+  applicant: '当前用户', // 🎯 默认为当前登录用户，即项目经理本人
   department: '',
   duration: undefined,
   budget: undefined,

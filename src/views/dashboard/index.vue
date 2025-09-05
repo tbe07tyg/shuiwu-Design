@@ -151,19 +151,7 @@
           </div>
         </a-card>
 
-        <!-- 快速操作面板 -->
-        <a-card class="quick-actions-card" title="快速操作">
-          <div class="quick-actions-grid">
-            <div v-for="action in quickActions" :key="action.key" 
-                 class="quick-action-item" 
-                 @click="handleQuickActionClick(action)">
-              <div class="action-icon">
-                <component :is="action.icon" />
-              </div>
-              <div class="action-text">{{ action.text }}</div>
-            </div>
-          </div>
-        </a-card>
+        <!-- 快速操作面板已移除 -->
 
         <!-- 系统通知 -->
         <a-card class="notifications-card" title="系统通知">
@@ -372,15 +360,7 @@ const calendarEvents = ref([
   }
 ])
 
-// 快速操作
-const quickActions = ref([
-  { key: 'new_meeting', text: '安排会议', icon: CalendarOutlined },
-  { key: 'review_materials', text: '审核材料', icon: FileTextOutlined },
-  { key: 'manage_projects', text: '项目管理', icon: ProjectOutlined },
-  { key: 'team_management', text: '团队管理', icon: TeamOutlined },
-  { key: 'system_settings', text: '系统设置', icon: SettingOutlined },
-  { key: 'search', text: '全局搜索', icon: SearchOutlined }
-])
+// 快速操作相关代码已移除
 
 // 系统通知
 const notifications = ref([
@@ -543,28 +523,7 @@ const viewEventDetail = (event) => {
   }
 }
 
-const handleQuickActionClick = (action) => {
-  switch (action.key) {
-    case 'new_meeting':
-      router.push('/opening/management/conclusion')
-      break
-    case 'review_materials':
-      router.push('/opening/management/center')
-      break
-    case 'manage_projects':
-      router.push('/project')
-      break
-    case 'team_management':
-      router.push('/settings')
-      break
-    case 'system_settings':
-      router.push('/settings')
-      break
-    case 'search':
-      message.info('全局搜索功能开发中')
-      break
-  }
-}
+// handleQuickActionClick 函数已移除
 
 onMounted(() => {
   // 页面加载时的初始化逻辑
@@ -898,39 +857,7 @@ onMounted(() => {
   color: #8c8c8c;
 }
 
-/* 快速操作样式 */
-.quick-actions-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.quick-action-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16px 8px;
-  border-radius: 8px;
-  background: #fafafa;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.quick-action-item:hover {
-  background: #e6f7ff;
-  color: #1890ff;
-  transform: translateY(-1px);
-}
-
-.action-icon {
-  font-size: 24px;
-  margin-bottom: 8px;
-}
-
-.action-text {
-  font-size: 12px;
-  text-align: center;
-}
+/* 快速操作样式已移除 */
 
 /* 通知样式 */
 .notifications-list {

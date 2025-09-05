@@ -132,6 +132,8 @@ const loginHistoryTitle = computed(() =>
 const router = useRouter()
 const onLogin = async () => {
   loading.value = true
+  // 设置token以避免跳转问题
+  localStorage.setItem('token', 'mock-token-' + Date.now())
   setTimeout(() => {
     loading.value = false
     router.push('/dashboard')

@@ -1,0 +1,443 @@
+<!--
+ * @file 编辑区域内容组件
+ * @description 用于编辑申报书解析的各个区域内容
+ * @author 科研管理系统
+ * @version 3.0.0
+ * @date 2025-01-29
+-->
+<template>
+  <div class="edit-section-content">
+    <!-- 编辑说明 -->
+    <a-alert
+      :message="`编辑 ${sectionTitle} 内容`"
+      type="info"
+      show-icon
+      style="margin-bottom: 16px"
+    >
+      <template #description>
+        <p>您可以对豆包解析的内容进行二次编辑和完善，支持富文本格式。</p>
+      </template>
+    </a-alert>
+
+    <!-- 编辑器 -->
+    <div class="editor-container">
+      <div class="editor-toolbar">
+        <a-space>
+          <a-button size="small" @click="insertTemplate">
+            <FileAddOutlined />
+            插入模板
+          </a-button>
+          <a-button size="small" @click="formatContent">
+            <FormatPainterOutlined />
+            格式化
+          </a-button>
+          <a-button size="small" @click="clearContent">
+            <ClearOutlined />
+            清空
+          </a-button>
+          <a-divider type="vertical" />
+          <span class="word-count">字数：{{ wordCount }}</span>
+        </a-space>
+      </div>
+      
+      <a-textarea
+        v-model:value="content"
+        :placeholder="getPlaceholder()"
+        :rows="12"
+        class="content-editor"
+        @input="handleInput"
+      />
+    </div>
+
+    <!-- 编辑辅助功能 -->
+    <div class="edit-helpers">
+      <a-row :gutter="16">
+        <!-- 常用模板 -->
+        <a-col :span="12">
+          <div class="helper-section">
+            <h4>📝 常用模板</h4>
+            <div class="template-buttons">
+              <a-button 
+                v-for="template in getTemplates()" 
+                :key="template.key"
+                size="small" 
+                @click="insertTemplateContent(template)"
+                style="margin: 4px;"
+              >
+                {{ template.name }}
+              </a-button>
+            </div>
+          </div>
+        </a-col>
+        
+        <!-- 编辑提示 -->
+        <a-col :span="12">
+          <div class="helper-section">
+            <h4>💡 编辑提示</h4>
+            <ul class="edit-tips">
+              <li v-for="tip in getEditTips()" :key="tip">{{ tip }}</li>
+            </ul>
+          </div>
+        </a-col>
+      </a-row>
+    </div>
+
+    <!-- 预览模式 -->
+    <div class="preview-section" v-if="showPreview">
+      <a-divider>内容预览</a-divider>
+      <div class="preview-content">
+        <pre>{{ content }}</pre>
+      </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="edit-actions">
+      <a-space>
+        <a-button @click="togglePreview">
+          <EyeOutlined />
+          {{ showPreview ? '隐藏预览' : '显示预览' }}
+        </a-button>
+        <a-button @click="resetContent">
+          <ReloadOutlined />
+          重置内容
+        </a-button>
+        <a-button @click="saveAsDraft">
+          <SaveOutlined />
+          保存草稿
+        </a-button>
+      </a-space>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, watch } from 'vue'
+import { message } from 'ant-design-vue'
+import { 
+  FileAddOutlined, 
+  FormatPainterOutlined, 
+  ClearOutlined,
+  EyeOutlined,
+  ReloadOutlined,
+  SaveOutlined
+} from '@ant-design/icons-vue'
+
+// Props
+const props = defineProps({
+  sectionTitle: {
+    type: String,
+    required: true
+  }
+})
+
+// Model
+const content = defineModel('content', {
+  type: String,
+  default: ''
+})
+
+// 响应式数据
+const showPreview = ref(false)
+const originalContent = ref('')
+
+// 计算属性
+const wordCount = computed(() => {
+  return content.value.length
+})
+
+// 监听器
+watch(() => content.value, (newValue) => {
+  if (originalContent.value === '') {
+    originalContent.value = newValue
+  }
+}, { immediate: true })
+
+// 方法定义
+
+/**
+ * 获取占位符文本
+ */
+const getPlaceholder = () => {
+  const placeholders = {
+    '📊 项目概况': '请输入项目的基本信息，包括项目名称、申请单位、负责人等...',
+    '🛠️ 实施方案': '请详细描述项目的实施方案，包括实施步骤、工作内容、时间安排等...',
+    '🔬 技术路线': '请描述项目的技术路线，包括技术方案、关键技术、实现路径等...',
+    '📅 进度计划': '请制定详细的项目进度计划，包括各阶段时间节点、里程碑等...',
+    '🔑 技术关键': '请说明项目的关键技术难点、技术创新点、解决方案等...',
+    '👥 团队信息': '请介绍项目团队成员、分工安排、能力匹配等信息...',
+    '📈 效益预期': '请描述项目预期产生的经济效益、社会效益、环境效益等...'
+  }
+  return placeholders[props.sectionTitle] || '请输入内容...'
+}
+
+/**
+ * 获取模板列表
+ */
+const getTemplates = () => {
+  const templates = {
+    '📊 项目概况': [
+      { key: 'basic', name: '基本信息', content: '项目名称：\n申请单位：\n项目负责人：\n协作单位：\n申报时间：' },
+      { key: 'summary', name: '项目摘要', content: '项目背景：\n研究目标：\n主要内容：\n预期成果：' }
+    ],
+    '🛠️ 实施方案': [
+      { key: 'phases', name: '分阶段实施', content: '第一阶段：\n第二阶段：\n第三阶段：' },
+      { key: 'tasks', name: '任务分解', content: '主要任务：\n1. \n2. \n3. ' },
+      { key: 'methods', name: '实施方法', content: '实施方法：\n质量控制：\n风险管控：' }
+    ],
+    '🔬 技术路线': [
+      { key: 'route', name: '技术路径', content: '技术路线：\n输入 → 处理 → 输出' },
+      { key: 'architecture', name: '系统架构', content: '系统架构：\n数据层：\n业务层：\n表现层：' },
+      { key: 'algorithms', name: '核心算法', content: '核心算法：\n1. \n2. \n3. ' }
+    ],
+    '📅 进度计划': [
+      { key: 'timeline', name: '时间节点', content: '项目周期：\n开始时间：\n结束时间：\n关键节点：' },
+      { key: 'milestones', name: '里程碑', content: '里程碑1：\n里程碑2：\n里程碑3：' },
+      { key: 'deliverables', name: '交付物', content: '阶段交付物：\n1. \n2. \n3. ' }
+    ],
+    '🔑 技术关键': [
+      { key: 'challenges', name: '技术难点', content: '技术难点：\n1. \n2. \n解决方案：' },
+      { key: 'innovations', name: '创新点', content: '技术创新：\n方法创新：\n应用创新：' },
+      { key: 'risks', name: '风险分析', content: '技术风险：\n应对措施：\n备选方案：' }
+    ],
+    '👥 团队信息': [
+      { key: 'members', name: '团队成员', content: '项目负责人：\n核心成员：\n技术骨干：' },
+      { key: 'division', name: '分工安排', content: '负责人职责：\n成员分工：\n协作机制：' },
+      { key: 'capabilities', name: '能力匹配', content: '技术能力：\n管理能力：\n资源保障：' }
+    ],
+    '📈 效益预期': [
+      { key: 'economic', name: '经济效益', content: '直接经济效益：\n间接经济效益：\n投资回报：' },
+      { key: 'social', name: '社会效益', content: '社会价值：\n应用前景：\n推广价值：' },
+      { key: 'environmental', name: '环境效益', content: '环境保护：\n资源节约：\n可持续发展：' }
+    ]
+  }
+  
+  return templates[props.sectionTitle] || []
+}
+
+/**
+ * 获取编辑提示
+ */
+const getEditTips = () => {
+  const tips = {
+    '📊 项目概况': [
+      '确保项目名称准确完整',
+      '核实申请单位和负责人信息',
+      '补充协作单位相关信息'
+    ],
+    '🛠️ 实施方案': [
+      '详细描述每个实施阶段',
+      '明确各阶段的工作内容',
+      '合理安排时间和资源'
+    ],
+    '🔬 技术路线': [
+      '清晰描述技术实现路径',
+      '突出关键技术和创新点',
+      '确保技术方案可行性'
+    ],
+    '📅 进度计划': [
+      '制定合理的时间节点',
+      '设置清晰的里程碑',
+      '考虑风险和缓冲时间'
+    ],
+    '🔑 技术关键': [
+      '识别真正的技术难点',
+      '提出可行的解决方案',
+      '评估技术风险和应对措施'
+    ],
+    '👥 团队信息': [
+      '介绍团队核心成员',
+      '说明专业能力匹配',
+      '明确分工和协作机制'
+    ],
+    '📈 效益预期': [
+      '量化经济效益指标',
+      '描述社会价值和意义',
+      '评估环境影响和贡献'
+    ]
+  }
+  
+  return tips[props.sectionTitle] || ['注意内容的准确性和完整性', '保持逻辑清晰和条理性', '使用专业术语和规范表达']
+}
+
+/**
+ * 处理输入
+ */
+const handleInput = () => {
+  // 可以在这里添加实时保存、自动补全等功能
+}
+
+/**
+ * 插入模板
+ */
+const insertTemplate = () => {
+  const templates = getTemplates()
+  if (templates.length > 0) {
+    insertTemplateContent(templates[0])
+  }
+}
+
+/**
+ * 插入模板内容
+ */
+const insertTemplateContent = (template) => {
+  if (content.value.trim()) {
+    content.value += '\n\n' + template.content
+  } else {
+    content.value = template.content
+  }
+  message.success(`已插入${template.name}模板`)
+}
+
+/**
+ * 格式化内容
+ */
+const formatContent = () => {
+  // 简单的格式化：统一换行符、去除多余空格
+  let formatted = content.value
+    .replace(/\r\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]+/g, ' ')
+    .trim()
+  
+  content.value = formatted
+  message.success('内容格式化完成')
+}
+
+/**
+ * 清空内容
+ */
+const clearContent = () => {
+  content.value = ''
+  message.success('内容已清空')
+}
+
+/**
+ * 切换预览
+ */
+const togglePreview = () => {
+  showPreview.value = !showPreview.value
+}
+
+/**
+ * 重置内容
+ */
+const resetContent = () => {
+  content.value = originalContent.value
+  message.success('内容已重置')
+}
+
+/**
+ * 保存草稿
+ */
+const saveAsDraft = () => {
+  // 这里可以实现保存草稿的逻辑
+  const draftKey = `draft_${props.sectionTitle}_${Date.now()}`
+  localStorage.setItem(draftKey, content.value)
+  message.success('草稿已保存')
+}
+</script>
+
+<style scoped>
+.edit-section-content {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.editor-container {
+  margin-bottom: 16px;
+}
+
+.editor-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+}
+
+.word-count {
+  font-size: 12px;
+  color: #666;
+}
+
+.content-editor {
+  border-radius: 0 0 6px 6px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.edit-helpers {
+  margin-bottom: 16px;
+}
+
+.helper-section h4 {
+  margin: 0 0 12px 0;
+  color: #333;
+  font-size: 14px;
+}
+
+.template-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.edit-tips {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 12px;
+  color: #666;
+}
+
+.edit-tips li {
+  margin: 4px 0;
+  line-height: 1.4;
+}
+
+.preview-section {
+  margin-bottom: 16px;
+}
+
+.preview-content {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 16px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.preview-content pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.edit-actions {
+  text-align: center;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .editor-toolbar {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .template-buttons {
+    justify-content: center;
+  }
+  
+  .edit-helpers .ant-col {
+    margin-bottom: 16px;
+  }
+}
+</style>

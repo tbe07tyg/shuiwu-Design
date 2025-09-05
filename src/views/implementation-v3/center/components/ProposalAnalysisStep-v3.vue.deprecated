@@ -1,0 +1,1004 @@
+<!--
+ * @file 第二步：申报书内容解析步骤组件 v3.0
+ * @description 基于豆包AI的智能申报书解析和任务提取，支持PDF预览和分区域展示
+ * @author 科研管理系统
+ * @version 3.0.0
+ * @date 2025-01-29
+-->
+<template>
+  <div class="proposal-analysis-step-v3">
+    <!-- 步骤说明 -->
+    <div class="step-description">
+      <h3>第二步：申报书内容解析 - 智能任务拆解版本</h3>
+      <p>系统自动获取立项申报书并转换为PDF预览，使用豆包AI智能解析申报书内容，按模板结构分区域展示解析结果，重点识别适合项目任务拆解的内容板块。</p>
+      
+      <a-alert
+        message="智能解析说明"
+        type="info"
+        show-icon
+        style="margin-top: 12px;"
+      >
+        <template #description>
+          <div class="analysis-guide">
+            <p><strong>🎯 任务拆解重点区域：</strong></p>
+            <ul>
+              <li><strong>实施方案</strong>：识别主要工作包和具体任务</li>
+              <li><strong>技术路线</strong>：梳理技术任务和依赖关系</li>
+              <li><strong>进度计划</strong>：提取时间节点和里程碑</li>
+              <li><strong>技术关键</strong>：识别技术攻关任务</li>
+            </ul>
+          </div>
+        </template>
+      </a-alert>
+    </div>
+
+    <!-- 主体内容区域 -->
+    <a-row :gutter="24" class="main-content">
+      <!-- 左侧：PDF预览区域 -->
+      <a-col :span="10">
+        <a-card title="📄 申报书PDF预览" class="pdf-preview-card">
+          <template #extra>
+            <a-space>
+              <a-button size="small" @click="refreshPdf" :loading="pdfLoading">
+                <ReloadOutlined />
+                刷新
+              </a-button>
+              <a-button size="small" @click="downloadPdf">
+                <DownloadOutlined />
+                下载
+              </a-button>
+            </a-space>
+          </template>
+          
+          <!-- PDF预览组件 -->
+          <div class="pdf-viewer-container">
+            <iframe
+              v-if="pdfUrl && !pdfLoading"
+              :src="pdfUrl"
+              class="pdf-viewer"
+              frameborder="0"
+            ></iframe>
+            
+            <div v-else class="pdf-loading">
+              <a-spin size="large" />
+              <p>{{ pdfLoading ? '正在转换PDF...' : '暂无PDF预览' }}</p>
+            </div>
+          </div>
+          
+          <!-- 文档信息 -->
+          <div class="document-info" v-if="documentInfo">
+            <a-descriptions size="small" :column="1" bordered>
+              <a-descriptions-item label="文件名">
+                {{ documentInfo.filename }}
+              </a-descriptions-item>
+              <a-descriptions-item label="文件大小">
+                {{ documentInfo.fileSize }}
+              </a-descriptions-item>
+              <a-descriptions-item label="页数">
+                {{ documentInfo.pageCount }}
+              </a-descriptions-item>
+              <a-descriptions-item label="解析状态">
+                <a-tag :color="getParseStatusColor()">
+                  {{ getParseStatusText() }}
+                </a-tag>
+              </a-descriptions-item>
+            </a-descriptions>
+          </div>
+        </a-card>
+      </a-col>
+      
+      <!-- 右侧：解析结果分区展示 -->
+      <a-col :span="14">
+        <a-card title="🤖 解析结果分区展示" class="analysis-results-card">
+          <template #extra>
+            <a-space>
+              <a-button @click="showDoubaoGuide">
+                <BulbOutlined />
+                豆包解析指南
+              </a-button>
+              <a-button type="primary" @click="showImportModal">
+                <ImportOutlined />
+                导入豆包结果
+              </a-button>
+            </a-space>
+          </template>
+          
+          <!-- 解析结果分区 -->
+          <div class="analysis-sections">
+            <!-- 项目概况区域 -->
+            <AnalysisSection
+              title="📊 项目概况"
+              :data="analysisResults.projectOverview"
+              :tasks="extractedTasks.projectOverview || []"
+              :editable="true"
+              :taskRelevant="false"
+              @edit="handleEdit"
+            />
+            
+            <!-- 实施方案区域 - 重点任务拆解 -->
+            <AnalysisSection
+              title="🛠️ 实施方案"
+              :data="analysisResults.implementationPlan"
+              :tasks="extractedTasks.implementationTasks || []"
+              :editable="true"
+              :taskRelevant="true"
+              :priority="'high'"
+              @edit="handleEdit"
+              @viewTasks="handleViewTasks"
+            />
+            
+            <!-- 技术路线区域 - 重点任务拆解 -->
+            <AnalysisSection
+              title="🔬 技术路线"
+              :data="analysisResults.technicalRoute"
+              :tasks="extractedTasks.technicalTasks || []"
+              :editable="true"
+              :taskRelevant="true"
+              :priority="'high'"
+              @edit="handleEdit"
+              @viewTasks="handleViewTasks"
+            />
+            
+            <!-- 进度计划区域 - 重点任务拆解 -->
+            <AnalysisSection
+              title="📅 进度计划"
+              :data="analysisResults.schedule"
+              :tasks="extractedTasks.milestoneTasks || []"
+              :editable="true"
+              :taskRelevant="true"
+              :priority="'high'"
+              @edit="handleEdit"
+              @viewTasks="handleViewTasks"
+            />
+            
+            <!-- 技术关键区域 -->
+            <AnalysisSection
+              title="🔑 技术关键"
+              :data="analysisResults.keyTechnologies"
+              :tasks="extractedTasks.researchTasks || []"
+              :editable="true"
+              :taskRelevant="true"
+              :priority="'medium'"
+              @edit="handleEdit"
+              @viewTasks="handleViewTasks"
+            />
+            
+            <!-- 团队信息区域 -->
+            <AnalysisSection
+              title="👥 团队信息"
+              :data="analysisResults.teamInfo"
+              :tasks="[]"
+              :editable="true"
+              :taskRelevant="false"
+              @edit="handleEdit"
+            />
+            
+            <!-- 效益预期区域 -->
+            <AnalysisSection
+              title="📈 效益预期"
+              :data="analysisResults.expectedBenefits"
+              :tasks="[]"
+              :editable="true"
+              :taskRelevant="false"
+              @edit="handleEdit"
+            />
+          </div>
+        </a-card>
+      </a-col>
+    </a-row>
+
+    <!-- 操作区域 -->
+    <div class="operation-area">
+      <a-card title="🎯 操作区域" class="operation-card">
+        <a-row :gutter="16">
+          <!-- 豆包解析工具 -->
+          <a-col :span="8">
+            <div class="operation-section">
+              <h4>🤖 豆包解析</h4>
+              <a-space direction="vertical" style="width: 100%;">
+                <a-button 
+                  type="primary" 
+                  block
+                  @click="copyEnhancedPrompt"
+                  :loading="copyingPrompt"
+                >
+                  <RobotOutlined />
+                  复制增强提示词（含任务提取）
+                </a-button>
+                <a-button block @click="openDoubaoWebsite">
+                  <LinkOutlined />
+                  打开豆包网页版
+                </a-button>
+                <a-button block @click="showPromptPreview">
+                  <EyeOutlined />
+                  预览增强提示词
+                </a-button>
+              </a-space>
+            </div>
+          </a-col>
+          
+          <!-- 结果导入 -->
+          <a-col :span="8">
+            <div class="operation-section">
+              <h4>📥 结果导入</h4>
+              <a-space direction="vertical" style="width: 100%;">
+                <a-button 
+                  type="primary" 
+                  block
+                  @click="showImportModal"
+                >
+                  <ImportOutlined />
+                  导入豆包解析结果
+                </a-button>
+                <a-button block @click="validateResults">
+                  <CheckCircleOutlined />
+                  验证解析结果
+                </a-button>
+                <a-button block @click="clearResults">
+                  <ClearOutlined />
+                  清空结果
+                </a-button>
+              </a-space>
+            </div>
+          </a-col>
+          
+          <!-- 保存和继续 -->
+          <a-col :span="8">
+            <div class="operation-section">
+              <h4>💾 保存继续</h4>
+              <a-space direction="vertical" style="width: 100%;">
+                <a-button 
+                  type="primary" 
+                  block
+                  @click="saveAnalysisResults"
+                  :loading="saving"
+                >
+                  <SaveOutlined />
+                  保存解析结果
+                </a-button>
+                <a-button 
+                  block
+                  @click="goToNextStep"
+                  :disabled="!allSectionsCompleted"
+                >
+                  <ArrowRightOutlined />
+                  下一步：任务分配
+                </a-button>
+              </a-space>
+            </div>
+          </a-col>
+        </a-row>
+      </a-card>
+    </div>
+
+    <!-- 豆包解析指南模态框 -->
+    <a-modal
+      v-model:open="doubaoGuideVisible"
+      title="🤖 豆包解析指南"
+      width="800px"
+      :footer="null"
+    >
+      <DoubaoGuide @close="doubaoGuideVisible = false" />
+    </a-modal>
+
+    <!-- 导入豆包结果模态框 -->
+    <a-modal
+      v-model:open="importModalVisible"
+      title="📥 导入豆包解析结果"
+      width="900px"
+      @ok="importDoubaoResult"
+      @cancel="importModalVisible = false"
+      :confirmLoading="importing"
+    >
+      <ImportDoubaoResult
+        v-model:jsonContent="importJsonContent"
+        :validationResult="jsonValidation"
+        @validate="validateImportJson"
+      />
+    </a-modal>
+
+    <!-- 编辑区域内容模态框 -->
+    <a-modal
+      v-model:open="editModalVisible"
+      title="✏️ 编辑区域内容"
+      width="800px"
+      @ok="saveEdit"
+      @cancel="editModalVisible = false"
+      :confirmLoading="editSaving"
+    >
+      <EditSectionContent
+        v-model:content="editingContent"
+        :sectionTitle="editingSection"
+      />
+    </a-modal>
+
+    <!-- 任务详情模态框 -->
+    <a-modal
+      v-model:open="taskModalVisible"
+      title="🎯 任务详情"
+      width="1000px"
+      :footer="null"
+    >
+      <TaskDetails
+        :tasks="selectedTasks"
+        :sectionTitle="selectedSection"
+        @editTask="handleEditTask"
+        @close="taskModalVisible = false"
+      />
+    </a-modal>
+
+    <!-- 提示词预览模态框 -->
+    <a-modal
+      v-model:open="promptPreviewVisible"
+      title="👁️ 增强提示词预览"
+      width="900px"
+      :footer="null"
+    >
+      <PromptPreview
+        :content="enhancedPromptContent"
+        @copy="copyPromptContent"
+        @close="promptPreviewVisible = false"
+      />
+    </a-modal>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { message } from 'ant-design-vue'
+import { 
+  ReloadOutlined, 
+  DownloadOutlined, 
+  BulbOutlined, 
+  ImportOutlined,
+  RobotOutlined,
+  LinkOutlined,
+  EyeOutlined,
+  CheckCircleOutlined,
+  ClearOutlined,
+  SaveOutlined,
+  ArrowRightOutlined
+} from '@ant-design/icons-vue'
+
+// 导入子组件
+import AnalysisSection from './AnalysisSection.vue'
+import DoubaoGuide from './DoubaoGuide.vue'
+import ImportDoubaoResult from './ImportDoubaoResult.vue'
+import EditSectionContent from './EditSectionContent.vue'
+import TaskDetails from './TaskDetails.vue'
+import PromptPreview from './PromptPreview.vue'
+
+// 导入工具类
+import DoubaoPromptGenerator from '@/utils/doubao-prompt-generator.js'
+import DoubaoResultParser from '@/utils/doubao-result-parser.js'
+import TaskManagerInstance from '@/utils/task-manager.js'
+import ProposalPdfService from '@/utils/proposal-pdf-service.js'
+
+// 导入API服务
+import * as proposalAnalysisApi from '@/api/proposal-analysis.js'
+
+// Props
+const props = defineProps({
+  selectedProject: {
+    type: Object,
+    required: true
+  }
+})
+
+// Emits
+const emit = defineEmits(['save', 'next'])
+
+// 响应式数据
+const pdfUrl = ref('')
+const pdfLoading = ref(false)
+const documentInfo = ref(null)
+
+// 解析结果数据
+const analysisResults = reactive({
+  projectOverview: { content: '', lastModified: null },
+  implementationPlan: { content: '', lastModified: null },
+  technicalRoute: { content: '', lastModified: null },
+  schedule: { content: '', lastModified: null },
+  keyTechnologies: { content: '', lastModified: null },
+  teamInfo: { content: '', lastModified: null },
+  expectedBenefits: { content: '', lastModified: null }
+})
+
+// 提取的任务数据
+const extractedTasks = reactive({
+  implementationTasks: [],
+  technicalTasks: [],
+  milestoneTasks: [],
+  researchTasks: [],
+  projectOverview: []
+})
+
+// 任务摘要
+const taskSummary = ref({
+  totalTasks: 0,
+  tasksByType: {},
+  estimatedTotalDuration: 0,
+  criticalPath: [],
+  riskTasks: []
+})
+
+// 模态框状态
+const doubaoGuideVisible = ref(false)
+const importModalVisible = ref(false)
+const editModalVisible = ref(false)
+const taskModalVisible = ref(false)
+const promptPreviewVisible = ref(false)
+
+// 操作状态
+const copyingPrompt = ref(false)
+const importing = ref(false)
+const saving = ref(false)
+const editSaving = ref(false)
+
+// 编辑相关数据
+const editingSection = ref('')
+const editingContent = ref('')
+const selectedTasks = ref([])
+const selectedSection = ref('')
+
+// 导入相关数据
+const importJsonContent = ref('')
+const jsonValidation = ref(null)
+
+// 增强提示词内容
+const enhancedPromptContent = ref('')
+
+// 工具类实例
+const promptGenerator = DoubaoPromptGenerator
+const resultParser = DoubaoResultParser
+const taskManager = TaskManagerInstance
+const pdfService = ProposalPdfService
+
+// 计算属性
+const allSectionsCompleted = computed(() => {
+  const requiredSections = ['implementationPlan', 'technicalRoute', 'schedule']
+  return requiredSections.every(section => 
+    analysisResults[section].content && analysisResults[section].content.trim().length > 0
+  )
+})
+
+// 方法定义
+
+/**
+ * 获取解析状态颜色
+ */
+const getParseStatusColor = () => {
+  if (taskSummary.value.totalTasks > 0) return 'green'
+  if (Object.values(analysisResults).some(section => section.content)) return 'orange'
+  return 'default'
+}
+
+/**
+ * 获取解析状态文本
+ */
+const getParseStatusText = () => {
+  if (taskSummary.value.totalTasks > 0) return `✅ 已完成 (${taskSummary.value.totalTasks}个任务)`
+  if (Object.values(analysisResults).some(section => section.content)) return '🔄 部分完成'
+  return '⏳ 待解析'
+}
+
+/**
+ * 刷新PDF
+ */
+const refreshPdf = async () => {
+  if (!props.selectedProject?.id) return
+  
+  try {
+    pdfLoading.value = true
+    const url = await pdfService.convertToPdf(props.selectedProject.id)
+    pdfUrl.value = url
+    
+    // 获取PDF信息
+    const info = await pdfService.getPdfInfo(url)
+    documentInfo.value = {
+      filename: `${props.selectedProject.name || '申报书'}.pdf`,
+      fileSize: formatFileSize(info.fileSize),
+      pageCount: info.pageCount || 0
+    }
+    
+    message.success('PDF预览刷新成功')
+  } catch (error) {
+    message.error('PDF预览刷新失败：' + error.message)
+  } finally {
+    pdfLoading.value = false
+  }
+}
+
+/**
+ * 下载PDF
+ */
+const downloadPdf = () => {
+  if (pdfUrl.value) {
+    const link = document.createElement('a')
+    link.href = pdfUrl.value
+    link.download = documentInfo.value?.filename || 'proposal.pdf'
+    link.click()
+  } else {
+    message.warning('PDF文件尚未生成')
+  }
+}
+
+/**
+ * 复制增强提示词
+ */
+const copyEnhancedPrompt = async () => {
+  try {
+    copyingPrompt.value = true
+    
+    // 获取申报书内容
+    const documentContent = await getDocumentContent()
+    
+    // 生成增强提示词
+    const prompt = promptGenerator.generateEnhancedPrompt(documentContent)
+    enhancedPromptContent.value = prompt
+    
+    // 复制到剪贴板
+    await navigator.clipboard.writeText(prompt)
+    
+    message.success('增强提示词已复制到剪贴板！请粘贴到豆包中进行解析。')
+  } catch (error) {
+    message.error('复制提示词失败：' + error.message)
+  } finally {
+    copyingPrompt.value = false
+  }
+}
+
+/**
+ * 获取申报书内容
+ */
+const getDocumentContent = async () => {
+  // 这里应该调用后端API获取申报书内容
+  // 暂时返回模拟数据
+  return `项目名称：${props.selectedProject?.name || '示例项目'}
+申请单位：华北水利水电大学
+项目负责人：张三
+研究内容：本项目旨在...
+实施方案：
+一、需求分析和系统设计
+二、核心算法研发
+三、系统集成测试
+技术路线：
+1. 数据采集与预处理
+2. 算法模型构建
+3. 系统开发与优化
+进度计划：
+第一阶段（1-6个月）：需求分析
+第二阶段（7-12个月）：系统开发
+第三阶段（13-18个月）：测试验收`
+}
+
+/**
+ * 打开豆包网站
+ */
+const openDoubaoWebsite = () => {
+  window.open('https://www.doubao.com/chat/', '_blank')
+}
+
+/**
+ * 显示提示词预览
+ */
+const showPromptPreview = async () => {
+  try {
+    const documentContent = await getDocumentContent()
+    enhancedPromptContent.value = promptGenerator.generateEnhancedPrompt(documentContent)
+    promptPreviewVisible.value = true
+  } catch (error) {
+    message.error('生成提示词预览失败：' + error.message)
+  }
+}
+
+/**
+ * 显示豆包解析指南
+ */
+const showDoubaoGuide = () => {
+  doubaoGuideVisible.value = true
+}
+
+/**
+ * 显示导入模态框
+ */
+const showImportModal = () => {
+  importModalVisible.value = true
+}
+
+/**
+ * 验证导入的JSON
+ */
+const validateImportJson = () => {
+  try {
+    const result = JSON.parse(importJsonContent.value)
+    
+    // 验证JSON结构
+    const validation = resultParser.validateStructure(result)
+    jsonValidation.value = validation
+    
+    if (validation.valid) {
+      message.success('JSON格式验证通过')
+    } else {
+      message.error('JSON格式验证失败：' + validation.message)
+    }
+  } catch (error) {
+    jsonValidation.value = {
+      valid: false,
+      message: 'JSON格式错误：' + error.message
+    }
+    message.error('JSON解析失败')
+  }
+}
+
+/**
+ * 导入豆包解析结果
+ */
+const importDoubaoResult = async () => {
+  if (!jsonValidation.value?.valid) {
+    message.error('请先验证JSON格式')
+    return
+  }
+  
+  try {
+    importing.value = true
+    
+    const doubaoResult = JSON.parse(importJsonContent.value)
+    
+    // 解析豆包结果
+    const parsedResult = resultParser.parseEnhancedResult(doubaoResult)
+    
+    // 更新解析结果
+    updateAnalysisResults(parsedResult)
+    
+    // 更新任务数据
+    updateExtractedTasks(parsedResult.taskExtraction)
+    
+    // 更新任务摘要
+    taskSummary.value = parsedResult.taskSummary
+    
+    // 导入任务到任务管理器
+    taskManager.importDoubaoTasks(parsedResult.taskExtraction)
+    
+    message.success(`豆包解析结果导入成功！共提取${parsedResult.taskSummary.totalTasks}个任务`)
+    importModalVisible.value = false
+    
+  } catch (error) {
+    message.error('导入失败：' + error.message)
+  } finally {
+    importing.value = false
+  }
+}
+
+/**
+ * 更新解析结果
+ */
+const updateAnalysisResults = (parsedResult) => {
+  // 更新各区域内容
+  analysisResults.projectOverview.content = resultParser.extractProjectOverview(parsedResult)
+  analysisResults.implementationPlan.content = resultParser.extractImplementationPlan(parsedResult)
+  analysisResults.technicalRoute.content = resultParser.extractTechnicalRoute(parsedResult)
+  analysisResults.schedule.content = resultParser.extractSchedule(parsedResult)
+  analysisResults.keyTechnologies.content = resultParser.extractKeyTechnologies(parsedResult)
+  analysisResults.teamInfo.content = resultParser.extractTeamInfo(parsedResult)
+  analysisResults.expectedBenefits.content = resultParser.extractExpectedBenefits(parsedResult)
+  
+  // 更新时间戳
+  const now = new Date().toISOString()
+  Object.keys(analysisResults).forEach(key => {
+    analysisResults[key].lastModified = now
+  })
+}
+
+/**
+ * 更新提取的任务
+ */
+const updateExtractedTasks = (taskExtraction) => {
+  extractedTasks.implementationTasks = taskExtraction.implementationTasks || []
+  extractedTasks.technicalTasks = taskExtraction.technicalTasks || []
+  extractedTasks.milestoneTasks = taskExtraction.milestoneTasks || []
+  extractedTasks.researchTasks = taskExtraction.researchTasks || []
+}
+
+/**
+ * 处理编辑
+ */
+const handleEdit = (data) => {
+  editingSection.value = data.section
+  editingContent.value = data.data.content
+  editModalVisible.value = true
+}
+
+/**
+ * 保存编辑
+ */
+const saveEdit = async () => {
+  try {
+    editSaving.value = true
+    
+    // 更新对应区域的内容
+    const sectionKey = getSectionKey(editingSection.value)
+    if (sectionKey && analysisResults[sectionKey]) {
+      analysisResults[sectionKey].content = editingContent.value
+      analysisResults[sectionKey].lastModified = new Date().toISOString()
+    }
+    
+    message.success('编辑保存成功')
+    editModalVisible.value = false
+  } catch (error) {
+    message.error('保存失败：' + error.message)
+  } finally {
+    editSaving.value = false
+  }
+}
+
+/**
+ * 查看任务
+ */
+const handleViewTasks = (data) => {
+  selectedSection.value = data.section
+  selectedTasks.value = data.tasks
+  taskModalVisible.value = true
+}
+
+/**
+ * 验证解析结果
+ */
+const validateResults = () => {
+  const issues = []
+  
+  // 检查必要区域是否有内容
+  const requiredSections = [
+    { key: 'implementationPlan', name: '实施方案' },
+    { key: 'technicalRoute', name: '技术路线' },
+    { key: 'schedule', name: '进度计划' }
+  ]
+  
+  requiredSections.forEach(section => {
+    if (!analysisResults[section.key].content) {
+      issues.push(`${section.name}区域内容为空`)
+    }
+  })
+  
+  // 检查任务数量
+  if (taskSummary.value.totalTasks === 0) {
+    issues.push('未提取到任何任务')
+  }
+  
+  if (issues.length > 0) {
+    message.warning('验证发现问题：' + issues.join('、'))
+  } else {
+    message.success('解析结果验证通过')
+  }
+}
+
+/**
+ * 清空解析结果
+ */
+const clearResults = () => {
+  // 清空解析结果
+  Object.keys(analysisResults).forEach(key => {
+    analysisResults[key].content = ''
+    analysisResults[key].lastModified = null
+  })
+  
+  // 清空任务数据
+  Object.keys(extractedTasks).forEach(key => {
+    extractedTasks[key] = []
+  })
+  
+  // 清空任务摘要
+  taskSummary.value = {
+    totalTasks: 0,
+    tasksByType: {},
+    estimatedTotalDuration: 0,
+    criticalPath: [],
+    riskTasks: []
+  }
+  
+  message.success('解析结果已清空')
+}
+
+/**
+ * 保存解析结果
+ */
+const saveAnalysisResults = async () => {
+  try {
+    saving.value = true
+    
+    const saveData = {
+      projectId: props.selectedProject.id,
+      analysisResults,
+      extractedTasks,
+      taskSummary: taskSummary.value,
+      saveTime: new Date().toISOString()
+    }
+    
+    // 调用API保存数据
+    await proposalAnalysisApi.saveAnalysisResult(saveData)
+    
+    message.success('解析结果保存成功')
+    emit('save', saveData)
+  } catch (error) {
+    message.error('保存失败：' + error.message)
+  } finally {
+    saving.value = false
+  }
+}
+
+/**
+ * 进入下一步
+ */
+const goToNextStep = () => {
+  if (!allSectionsCompleted.value) {
+    message.warning('请先完成必要区域的解析')
+    return
+  }
+  
+  emit('next', {
+    analysisResults,
+    extractedTasks,
+    taskSummary: taskSummary.value
+  })
+}
+
+/**
+ * 获取区域键名
+ */
+const getSectionKey = (sectionTitle) => {
+  const sectionMap = {
+    '📊 项目概况': 'projectOverview',
+    '🛠️ 实施方案': 'implementationPlan',
+    '🔬 技术路线': 'technicalRoute',
+    '📅 进度计划': 'schedule',
+    '🔑 技术关键': 'keyTechnologies',
+    '👥 团队信息': 'teamInfo',
+    '📈 效益预期': 'expectedBenefits'
+  }
+  return sectionMap[sectionTitle]
+}
+
+/**
+ * 格式化文件大小
+ */
+const formatFileSize = (bytes) => {
+  if (!bytes) return '未知'
+  
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(1024))
+  return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i]
+}
+
+/**
+ * 复制提示词内容
+ */
+const copyPromptContent = async (content) => {
+  try {
+    await navigator.clipboard.writeText(content)
+    message.success('提示词已复制到剪贴板')
+  } catch (error) {
+    message.error('复制失败：' + error.message)
+  }
+}
+
+/**
+ * 处理编辑任务
+ */
+const handleEditTask = (task) => {
+  // 实现任务编辑逻辑
+  console.log('编辑任务:', task)
+}
+
+// 生命周期
+onMounted(async () => {
+  if (props.selectedProject?.id) {
+    await refreshPdf()
+  }
+})
+
+// 监听项目变化
+watch(() => props.selectedProject, async (newProject) => {
+  if (newProject?.id) {
+    await refreshPdf()
+    // 清空当前解析结果
+    clearResults()
+  }
+})
+</script>
+
+<style scoped>
+.proposal-analysis-step-v3 {
+  padding: 20px;
+}
+
+.step-description {
+  margin-bottom: 24px;
+}
+
+.step-description h3 {
+  color: #1890ff;
+  margin-bottom: 8px;
+}
+
+.analysis-guide ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.main-content {
+  margin-bottom: 24px;
+}
+
+.pdf-preview-card {
+  height: 100%;
+}
+
+.pdf-viewer-container {
+  height: 500px;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.pdf-viewer {
+  width: 100%;
+  height: 100%;
+}
+
+.pdf-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #999;
+}
+
+.document-info {
+  margin-top: 16px;
+}
+
+.analysis-results-card {
+  height: 100%;
+}
+
+.analysis-sections {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.operation-area {
+  margin-top: 24px;
+}
+
+.operation-section h4 {
+  margin-bottom: 12px;
+  color: #333;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .main-content .ant-col:first-child {
+    margin-bottom: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .proposal-analysis-step-v3 {
+    padding: 12px;
+  }
+  
+  .pdf-viewer-container {
+    height: 300px;
+  }
+  
+  .analysis-sections {
+    max-height: 400px;
+  }
+  
+  .operation-area .ant-col {
+    margin-bottom: 16px;
+  }
+}
+</style>

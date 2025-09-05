@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>申报书解析静态预览 - 结果展示与任务分解准备</title>
+  <style>
+    :root {
+      --primary: #234fa2;
+      --secondary: #4e7be6;
+      --bg: #f5f8ff;
+      --card: #fff;
+      --border: #e6eaf2;
+      --text: #333;
+      --muted: #666;
+      --ok: #52c41a;
+      --warn: #faad14;
+      --danger: #ff4d4f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Microsoft YaHei', sans-serif;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 24px auto 120px;
+      padding: 0 16px;
+    }
+    .page-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--primary);
+    }
+    .page-title h2 { margin: 0; letter-spacing: 1px; }
+    .hint { color: var(--muted); font-size: 13px; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 16px 0 12px;
+    }
+    .btn {
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+    }
+    .btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn.ghost { background: transparent; }
+    .btn[disabled] { opacity: .5; cursor: not-allowed; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 4px 32px rgba(35,79,162,0.1);
+      padding: 16px;
+    }
+    .card h3 { margin: 0 0 12px; color: var(--primary); }
+    .desc { color: var(--muted); font-size: 13px; margin: 6px 0 12px; }
+
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid var(--border);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .tab {
+      padding: 0 16px 12px;
+      font-weight: 700;
+      color: var(--muted);
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+    }
+    .tab.active { color: var(--primary); border-color: var(--primary); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .kv { display: grid; grid-template-columns: 120px 1fr; gap: 6px; font-size: 14px; }
+    .kv .k { color: var(--muted); }
+
+    .phase {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      background: #fafcff;
+    }
+    .phase h4 { margin: 0 0 8px; color: var(--text); }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; margin-right: 6px; border:1px solid var(--border); }
+    .tag.ok { background:#f6ffed; color:#135200; border-color:#b7eb8f; }
+    .tag.warn { background:#fffbe6; color:#ad6800; border-color:#ffe58f; }
+    .tag.info { background:#f0f5ff; color:#1d39c4; border-color:#adc6ff; }
+
+    .list { margin: 8px 0; padding-left: 18px; }
+    .list li { margin: 4px 0; }
+
+    .timeline { border-left: 2px solid var(--border); padding-left: 12px; }
+    .tl-item { margin: 12px 0; position: relative; }
+    .tl-item::before { content:""; position:absolute; left:-8px; top:6px; width:10px; height:10px; border-radius:50%; background: var(--primary); }
+    .tl-item h5 { margin:0 0 4px; }
+
+    .side { position: sticky; top: 16px; height: fit-content; }
+    pre.json { background:#0b1020; color:#aee2ff; border-radius:10px; padding:12px; overflow:auto; font-size:12px; line-height:1.5; }
+
+    .actions {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.8);
+      backdrop-filter: blur(6px);
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+    }
+    .actions .inner { max-width: 1200px; margin: 0 auto; display:flex; align-items:center; gap: 8px; }
+    .spacer { flex: 1; }
+
+    .modal-backdrop { display:none; position:fixed; inset:0; background: rgba(0,0,0,.45); align-items:center; justify-content:center; }
+    .modal-backdrop.show { display:flex; }
+    .modal { width: 720px; max-width: calc(100% - 24px); background:#fff; border-radius: 12px; border:1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+    .modal .hd { padding: 12px 16px; border-bottom:1px solid var(--border); font-weight:600; color: var(--primary); }
+    .modal .bd { padding: 16px; max-height: 70vh; overflow:auto; }
+    .modal .ft { padding: 12px 16px; border-top:1px solid var(--border); text-align:right; }
+
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 1fr; }
+      .side { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-title">
+      <h2>第二步：申报书解析 - 静态预览</h2>
+      <span class="hint">展示“解析结果汇总 + 任务分解准备”的最终样貌（示意）</span>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn" onclick="showTips()">三步解析说明</button>
+      <button class="btn" onclick="switchTab('overview')">概况</button>
+      <button class="btn" onclick="switchTab('tech')">技术路线</button>
+      <button class="btn" onclick="switchTab('impl')">实施方案</button>
+      <button class="btn" onclick="switchTab('milestone')">进度里程碑</button>
+      <button class="btn" onclick="switchTab('json')">JSON原文</button>
+      <button class="btn ghost" onclick="validateData()">校验数据</button>
+      <button class="btn primary" onclick="openModal('wbsModal')">一键生成任务初稿</button>
+    </div>
+
+    <div class="layout">
+      <div>
+        <div class="card">
+          <div class="tabs">
+            <div class="tab active" id="tab-overview" onclick="switchTab('overview')">项目概况</div>
+            <div class="tab" id="tab-tech" onclick="switchTab('tech')">技术路线</div>
+            <div class="tab" id="tab-impl" onclick="switchTab('impl')">实施方案</div>
+            <div class="tab" id="tab-milestone" onclick="switchTab('milestone')">进度计划</div>
+          </div>
+
+          <div id="panel-overview">
+            <h3>📋 基本信息</h3>
+            <div class="grid-2">
+              <div class="kv"><div class="k">项目名称</div><div>智能水务管理系统</div></div>
+              <div class="kv"><div class="k">申请单位</div><div>华北水利水电大学</div></div>
+              <div class="kv"><div class="k">项目负责人</div><div>张教授</div></div>
+              <div class="kv"><div class="k">申报时间</div><div>2025-01-01</div></div>
+              <div class="kv"><div class="k">项目周期</div><div>18个月</div></div>
+              <div class="kv"><div class="k">项目总预算</div><div>300万元</div></div>
+            </div>
+            <div class="desc">可一键“设为全局项目信息”，用于后续任务分解默认约束（周期、预算等）。</div>
+          </div>
+
+          <div id="panel-tech" style="display:none;">
+            <h3>🛤️ 技术路线</h3>
+            <div class="phase">
+              <h4>阶段A（0-6月） <span class="tag info">关键技术：IoT / Edge</span> <span class="tag warn">风险：中</span></h4>
+              <ul class="list">
+                <li>主要任务：传感网络接入、边缘计算节点部署</li>
+                <li>交付物：设备接入清单、边缘节点部署报告</li>
+                <li>依赖：设备到货、现场施工窗口</li>
+              </ul>
+            </div>
+            <div class="phase">
+              <h4>阶段B（7-12月） <span class="tag info">关键技术：DataLake / ML</span> <span class="tag warn">风险：高</span></h4>
+              <ul class="list">
+                <li>主要任务：数据湖搭建、预测算法研发</li>
+                <li>交付物：数据湖策略、算法评估报告</li>
+                <li>依赖：阶段A完成、数据稳定入湖</li>
+              </ul>
+            </div>
+          </div>
+
+          <div id="panel-impl" style="display:none;">
+            <h3>📚 实施方案</h3>
+            <div class="phase">
+              <h4>阶段1：原型构建（1-6月） <span class="tag ok">预算：80万</span></h4>
+              <div class="kv"><div class="k">目标</div><div>完成可运行原型，验证核心链路</div></div>
+              <div class="kv"><div class="k">活动</div><div>设备接入、核心功能原型、关键接口联调</div></div>
+              <div class="kv"><div class="k">里程碑</div><div>原型验收通过</div></div>
+              <div class="kv"><div class="k">团队结构</div><div>PM、技术负责人、后端2、前端2、算法1</div></div>
+              <div class="kv"><div class="k">资源</div><div>服务器2台、边缘节点3套、测试场地</div></div>
+            </div>
+            <div class="phase">
+              <h4>阶段2：系统化开发（7-12月） <span class="tag ok">预算：120万</span></h4>
+              <div class="kv"><div class="k">目标</div><div>形成系统级能力，覆盖主业务链路</div></div>
+              <div class="kv"><div class="k">活动</div><div>数据湖部署、算法落地、前后端联调</div></div>
+              <div class="kv"><div class="k">里程碑</div><div>系统联调通过</div></div>
+              <div class="kv"><div class="k">团队结构</div><div>新增算法2、测试2、运维1</div></div>
+              <div class="kv"><div class="k">资源</div><div>GPU服务器1台、云资源预算</div></div>
+            </div>
+          </div>
+
+          <div id="panel-milestone" style="display:none;">
+            <h3>⏱️ 进度与里程碑</h3>
+            <div class="timeline">
+              <div class="tl-item">
+                <h5>原型完成（第6月）</h5>
+                <div class="desc">验收标准：原型系统可运行，核心链路稳定</div>
+              </div>
+              <div class="tl-item">
+                <h5>系统联调完成（第12月）</h5>
+                <div class="desc">验收标准：数据链路闭环，关键接口通过测试</div>
+              </div>
+              <div class="tl-item">
+                <h5>试点上线（第18月）</h5>
+                <div class="desc">验收标准：试点稳定运行，用户满意度达标</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="side">
+        <div class="card">
+          <h3>🧩 JSON 原文（示意）</h3>
+          <div class="desc">展示豆包返回的JSON，便于校验与回溯。</div>
+          <pre class="json" id="jsonBox">{
+  "projectName": "智能水务管理系统",
+  "applicantUnit": "华北水利水电大学",
+  "leader": "张教授",
+  "applicationDate": "2025-01-01",
+  "technicalRoute": [
+    {
+      "phase": "阶段A",
+      "duration": 6,
+      "keyTechnologies": ["IoT", "Edge"],
+      "mainTasks": ["传感接入", "边缘部署"],
+      "deliverables": ["接入清单", "部署报告"],
+      "riskLevel": "中",
+      "dependencies": ["设备到货"]
+    }
+  ],
+  "implementationPlan": {
+    "totalDuration": 18,
+    "phases": [
+      { "phaseName": "原型构建", "startMonth": 1, "endMonth": 6,
+        "objectives": ["原型可运行"],
+        "activities": ["设备接入", "核心功能原型"],
+        "milestones": ["原型验收"],
+        "budget": "80万"
+      }
+    ],
+    "teamStructure": { "projectManager": "PM", "technicalLeader": "TL" },
+    "resources": { "personnel": "7人", "equipment": "服务器/节点" }
+  }
+}</pre>
+          <div class="toolbar">
+            <button class="btn" onclick="copyJson()">复制JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <div class="inner">
+      <div class="hint">准备完成后，可以一键生成任务初稿，再进入“任务分解”步骤</div>
+      <div class="spacer"></div>
+      <button class="btn" onclick="validateData()">校验数据</button>
+      <button class="btn primary" onclick="openModal('wbsModal')">准备就绪，进入任务分解</button>
+    </div>
+  </div>
+
+  <!-- 校验结果弹层 -->
+  <div class="modal-backdrop" id="validateModal">
+    <div class="modal">
+      <div class="hd">数据校验结果</div>
+      <div class="bd" id="validateBody">
+        <div>所有必填项看起来都齐全（示意）。</div>
+        <ul class="list">
+          <li>阶段命名：OK</li>
+          <li>任务清单：OK</li>
+          <li>时间范围：OK</li>
+          <li>依赖关系：无环依赖</li>
+        </ul>
+        <div class="desc">实际系统中会高亮缺失字段并给出修复建议。</div>
+      </div>
+      <div class="ft">
+        <button class="btn" onclick="closeModal('validateModal')">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 任务初稿弹层（WBS预览） -->
+  <div class="modal-backdrop" id="wbsModal">
+    <div class="modal">
+      <div class="hd">WBS 任务初稿（示意）</div>
+      <div class="bd">
+        <div class="desc">由“技术路线 mainTasks + 实施方案 phases”映射生成；已自动添加标签与优先级。</div>
+        <pre class="json">阶段1：原型构建
+  ├─ 任务：传感网络接入（标签：tech,phase1 | 优先级：高）
+  ├─ 任务：边缘节点部署（标签：tech,phase1 | 优先级：中）
+  └─ 里程碑：原型验收
+
+阶段2：系统化开发
+  ├─ 任务：数据湖搭建（标签：tech,phase2 | 优先级：高，关键路径）
+  ├─ 任务：预测算法研发（标签：tech,phase2 | 优先级：高，风险：高）
+  └─ 里程碑：系统联调</pre>
+        <div class="desc">点击“准备就绪，进入任务分解”将把该初稿与规范化中间模型一并传入下一步。</div>
+      </div>
+      <div class="ft">
+        <button class="btn" onclick="closeModal('wbsModal')">取消</button>
+        <button class="btn primary" onclick="proceed()">进入任务分解</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function qs(id){ return document.getElementById(id) }
+    function switchTab(key){
+      const panels = ['overview','tech','impl','milestone']
+      panels.forEach(k => {
+        qs('panel-'+k).style.display = (k===key)?'block':'none'
+        qs('tab-'+k)?.classList.toggle('active', k===key)
+      })
+      if(key==='json') window.scrollTo({top: document.body.scrollHeight, behavior:'smooth'})
+    }
+    function showTips(){
+      alert('三步解析：\n1) 复制提示词到豆包\n2) 粘贴并获取JSON\n3) 粘贴结果回系统，生成任务初稿')
+    }
+    function validateData(){ openModal('validateModal') }
+    function openModal(id){ qs(id).classList.add('show') }
+    function closeModal(id){ qs(id).classList.remove('show') }
+    function proceed(){
+      closeModal('wbsModal');
+      alert('示意：将跳转到任务分解步骤，并带入任务初稿与中间模型。')
+    }
+    function copyJson(){
+      const text = qs('jsonBox').innerText
+      navigator.clipboard?.writeText(text).then(() => alert('JSON 已复制'))
+        .catch(()=>alert('复制失败，请手动选择复制'))
+    }
+  </script>
+</body>
+</html>
+
+

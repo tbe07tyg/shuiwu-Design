@@ -160,8 +160,7 @@
           <!-- 所有状态都可以更新状态（除已终止） -->
           <a-button v-if="record.status !== 'terminated'" size="small" @click="showUpdateProgress(record.id)">📝 更新状态</a-button>
           
-          <!-- 已完成状态专有操作 -->
-          <a-button v-if="record.status === 'completed'" size="small" type="default">➡️ 转为立项</a-button>
+
           
           <!-- 除已终止外都可以添加事项 -->
           <a-button 

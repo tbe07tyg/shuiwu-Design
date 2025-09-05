@@ -9,11 +9,27 @@ const routes = [
   {
     path: '/',
     component: () => import('@/layout/Layout.vue'),
+    redirect: '/project-manager/dashboard',
     children: [
       {
         path: 'dashboard',
         name: 'Dashboard',
         component: () => import('@/views/dashboard/index.vue')
+      },
+      // 日常维护
+      {
+        path: 'maintenance',
+        name: 'Maintenance',
+        component: () => import('@/views/maintenance/_container.vue'),
+        meta: { title: '日常维护', icon: 'ToolOutlined' },
+        children: [
+          {
+            path: 'report-templates',
+            name: 'MaintenanceReportTemplates',
+            component: () => import('@/views/maintenance/report-templates/index.vue'),
+            meta: { title: '提报模板', icon: 'FileProtectOutlined', permissions: ['maintenance:report-templates'] }
+          }
+        ]
       },
       {
         path: 'project',
@@ -42,6 +58,45 @@ const routes = [
         meta: {
           title: '历史档案',
           icon: 'DatabaseOutlined'
+        }
+      },
+      {
+        path: 'project/archive/completed',
+        name: 'ProjectArchiveCompleted',
+        component: () => import('@/views/project/archive/completed.vue'),
+        meta: {
+          title: '已完成项目',
+          icon: 'FileTextOutlined'
+        }
+      },
+      {
+        path: 'project/archive/documents',
+        name: 'ProjectArchiveDocuments',
+        component: () => import('@/views/project/archive/documents.vue'),
+        meta: {
+          title: '归档文档',
+          icon: 'FolderOpenOutlined'
+        }
+      },
+      {
+        path: 'project/archive/statistics',
+        name: 'ProjectArchiveStatistics',
+        component: () => import('@/views/project/archive/statistics.vue'),
+        meta: {
+          title: '归档统计',
+          icon: 'BarChartOutlined'
+        }
+      },
+
+      // 项目经理后台使用指南（放在归档菜单后面）
+      {
+        path: 'project-manager/help',
+        name: 'ProjectManagerHelp',
+        component: () => import('@/views/project-manager/help/index.vue'),
+        meta: {
+          title: '项目经理后台使用指南',
+          icon: 'QuestionCircleOutlined',
+          permissions: ['project-manager:help']
         }
       },
       
@@ -368,7 +423,8 @@ const routes = [
         component: () => import('@/views/analytics/index.vue'),
         meta: {
           title: '统计分析中心',
-          icon: 'BarChartOutlined'
+          icon: 'BarChartOutlined',
+          hidden: true
         }
       },
       {
@@ -410,11 +466,17 @@ const routes = [
           icon: 'FileTextOutlined'
         }
       },
+      // 提报模板维护（放在日常维护分组下）
       {
-        path: 'preview',
-        name: 'Preview',
-        component: () => import('@/views/设计方案/工作台方案/Preview.vue')
+        path: 'settings/report-templates',
+        name: 'SettingsReportTemplates',
+        component: () => import('@/views/maintenance/report-templates/index.vue'),
+        meta: {
+          title: '提报模板',
+          icon: 'FileProtectOutlined'
+        }
       },
+
       {
         path: 'implementation/opening/submit',
         name: 'ImplementationOpeningSubmit',
@@ -451,15 +513,229 @@ const routes = [
         component: () => import('@/views/acceptance/management/conclusion.vue'),
         meta: { title: '项目验收-组织会议' }
       },
+      
+      // 项目经理后台管理系统路由
       {
-        path: '',
-        redirect: 'dashboard'
-      }
+        path: 'project-manager/dashboard',
+        name: 'ProjectManagerDashboard',
+        component: () => import('@/views/project-manager/dashboard/index.vue'),
+        meta: {
+          title: '项目经理仪表板',
+          icon: 'DashboardOutlined',
+          permissions: ['project-manager:dashboard']
+        }
+      },
+      {
+        path: 'project-manager/projects',
+        name: 'ProjectManagerProjects',
+        component: () => import('@/views/project-manager/projects/index.vue'),
+        meta: {
+          title: '项目详情管理',
+          icon: 'ProjectOutlined',
+          permissions: ['project-manager:projects']
+        }
+      },
+      {
+        path: 'project-manager/projects/config-wizard',
+        name: 'ProjectManagerProjectConfigWizard',
+        component: () => import('@/views/project-manager/projects/config-wizard.vue'),
+        meta: {
+          title: '项目配置向导',
+          icon: 'SettingOutlined',
+          permissions: ['project-manager:projects']
+        }
+      },
+      {
+        path: 'project-manager/projects/monitor/:id',
+        name: 'ProjectManagerProjectMonitor',
+        component: () => import('@/views/project-manager/projects/monitor.vue'),
+        meta: {
+          title: '项目实施监控',
+          icon: 'MonitorOutlined',
+          permissions: ['project-manager:projects']
+        }
+      },
+      {
+        path: 'project-manager/templates',
+        name: 'ProjectManagerTemplates',
+        component: () => import('@/views/project-manager/templates/index.vue'),
+        meta: {
+          title: '项目模板管理',
+          icon: 'FileTextOutlined',
+          permissions: ['maintenance:project-template']
+        }
+      },
+      {
+        path: 'project-manager/projects/create',
+        name: 'ProjectManagerProjectCreate',
+        component: () => import('@/views/project/create.vue'),
+        meta: {
+          title: '手动创建项目',
+          icon: 'PlusOutlined',
+          permissions: ['project-manager:projects']
+        }
+      },
+      {
+        path: 'project-manager/projects/:id/edit',
+        name: 'ProjectManagerProjectEdit',
+        component: () => import('@/views/project-manager/projects/edit.vue'),
+        meta: {
+          title: '编辑项目',
+          icon: 'EditOutlined',
+          permissions: ['project-manager:projects']
+        }
+      },
+      
+      {
+        path: 'project-manager/team',
+        name: 'ProjectManagerTeam',
+        component: () => import('@/views/project-manager/team/index.vue'),
+        meta: {
+          title: '团队管理',
+          icon: 'TeamOutlined',
+          permissions: ['project-manager:team']
+        }
+      },
+      {
+        path: 'project-manager/resources',
+        name: 'ProjectManagerResources',
+        component: () => import('@/views/project-manager/resources/index.vue'),
+        meta: {
+          title: '资源管理',
+          icon: 'DatabaseOutlined',
+          permissions: ['project-manager:resources'],
+          hidden: true
+        }
+      },
+      {
+        path: 'project-manager/analytics',
+        name: 'ProjectManagerAnalytics',
+        component: () => import('@/views/project-manager/analytics/index.vue'),
+        meta: {
+          title: '数据分析',
+          icon: 'BarChartOutlined',
+          permissions: ['project-manager:analytics']
+        }
+      },
+      
+      // AI助手路由
+      {
+        path: 'ai-assistant/project-manager',
+        name: 'AIAssistantProjectManager',
+        component: () => import('@/views/ai-assistant/project-manager/index.vue'),
+        meta: {
+          title: '项目经理AI助手',
+          icon: 'RobotOutlined',
+          permissions: ['ai-assistant:project-manager']
+        }
+      },
+      {
+        path: 'ai-assistant/help',
+        name: 'AIAssistantHelp',
+        component: () => import('@/views/ai-assistant/help/index.vue'),
+        meta: {
+          title: 'AI助手使用指南',
+          icon: 'QuestionCircleOutlined',
+          permissions: ['ai-assistant:help']
+        }
+      },
+      {
+        path: 'ai-assistant/team-member',
+        name: 'AIAssistantTeamMember',
+        component: () => import('@/views/ai-assistant/team-member/index.vue'),
+        meta: {
+          title: '团队成员AI助手',
+          icon: 'RobotOutlined',
+          permissions: ['ai-assistant:team-member']
+        }
+      },
+      {
+        path: 'ai-assistant/management',
+        name: 'AIAssistantManagement',
+        component: () => import('@/views/ai-assistant/management/index.vue'),
+        meta: {
+          title: '管理层AI助手',
+          icon: 'RobotOutlined',
+          permissions: ['ai-assistant:management']
+        }
+      },
+      
+      // 团队成员任务看板路由（重构后的主页面）
+      {
+        path: 'team-member/tasks',
+        name: 'TeamMemberTasks',
+        component: () => import('@/views/team-member/tasks/index.vue'),
+        meta: {
+          title: '我的任务看板（v2）',
+          icon: 'AppstoreOutlined',
+          permissions: ['team-member:tasks']
+        }
+      },
+      // v1 已废弃，保留占位禁用
+      {
+        path: 'team-member/dashboard',
+        name: 'TeamMemberDashboardDeprecated',
+        component: () => import('@/views/team-member/dashboard/index.vue'),
+        meta: { title: '团队成员工作台（v1 已废弃）', hidden: true, deprecated: true }
+      },
+
+      // v6.0新版本路由 - 基于申报书内容的项目管理系统
+      // v2 已废弃（保留路由但隐藏）
+      {
+        path: 'implementation-v2/center',
+        name: 'ImplementationV2CenterDeprecated',
+        component: () => import('@/views/implementation-v2/center/index.vue'),
+        meta: { title: '项目实施管理v2（已废弃）', hidden: true, deprecated: true }
+      },
+      {
+        path: 'implementation-v3/center',
+        name: 'ImplementationV3Center',
+        component: () => import('@/views/implementation-v3/center/index.vue'),
+        meta: {
+          title: '项目实施管理v3',
+          icon: 'ProjectOutlined',
+          permissions: ['project-manager:implementation-v3']
+        }
+      },
+      {
+        path: 'team-workbench-v2',
+        name: 'TeamWorkbenchV2',
+        component: () => import('@/views/team-workbench-v2/index.vue'),
+        meta: {
+          title: '团队成员工作台v2',
+          icon: 'TeamOutlined',
+          permissions: ['team-member:workbench-v2']
+        }
+      },
+      
+      {
+        path: 'team-member/help',
+        name: 'TeamMemberHelp',
+        component: () => import('@/views/team-member/help/index.vue'),
+        meta: {
+          title: '团队成员工作台使用指南',
+          icon: 'QuestionCircleOutlined',
+          permissions: ['team-member:help']
+        }
+      },
+
+      {
+        path: 'team-member/projects/detail',
+        name: 'TeamMemberProjectDetail',
+        component: () => import('@/views/team-member/projects/detail.vue'),
+        meta: {
+          title: '项目详情',
+          icon: 'ProjectOutlined',
+          permissions: ['team-member:projects']
+        }
+      },
+      
+      
     ]
   },
   {
     path: '/:catchAll(.*)',
-    redirect: '/login'
+    redirect: '/dashboard'
   }
 ]
 
@@ -467,5 +743,11 @@ const router = createRouter({
   history: createWebHistory(),
   routes
 })
+
+// 临时移除路由守卫，用于调试
+// router.beforeEach((to, from, next) => {
+//   console.log('路由跳转:', from.path, '->', to.path)
+//   next()
+// })
 
 export default router 

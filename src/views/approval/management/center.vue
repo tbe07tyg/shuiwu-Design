@@ -2041,16 +2041,19 @@ const handleResultSubmit = () => {
       // 状态映射逻辑
       switch (resultForm.value.conclusion) {
         case 'passed':
-                  // 立项通过 → 申请人状态：approval_passed
-        projects.value[projectIndex].currentStatus = 'approval_passed'
+          // 立项通过 → 申请人状态：approval_passed
+          projects.value[projectIndex].currentStatus = 'approval_passed'
+          
+          // 🎯 立项通过后自动创建项目并跳转到项目经理后台
+          handleAutoCreateProject(projects.value[projectIndex])
           break
         case 'conditional_passed':
-                      // 有条件通过 → 申请人状态：approval_conditional
-            projects.value[projectIndex].currentStatus = 'approval_conditional'
+          // 有条件通过 → 申请人状态：approval_conditional
+          projects.value[projectIndex].currentStatus = 'approval_conditional'
           break
         case 'failed':
-                      // 立项不通过 → 申请人状态：approval_failed
-            projects.value[projectIndex].currentStatus = 'approval_failed'
+          // 立项不通过 → 申请人状态：approval_failed
+          projects.value[projectIndex].currentStatus = 'approval_failed'
           break
       }
       
@@ -2067,6 +2070,52 @@ const handleResultSubmit = () => {
     
     // 这里应该调用API同步状态到申请人端
     // syncStatusToApplicant(selectedProject.value.id, projects.value[projectIndex].currentStatus)
+  }
+}
+
+// 🎯 自动创建项目并跳转到项目经理后台
+const handleAutoCreateProject = async (approvedProject) => {
+  try {
+    // 构建项目数据
+    const projectData = {
+      // 基本信息从立项数据中获取
+      name: approvedProject.title,
+      description: approvedProject.description || '来自立项自动创建的项目',
+      budget: approvedProject.budget,
+      duration: approvedProject.duration,
+      
+      // 项目经理信息（申请人即为项目经理）
+      manager: approvedProject.applicant,
+      managerId: approvedProject.applicantId || approvedProject.id,
+      
+      // 项目状态和时间
+      status: 'active', // 自动设为进行中
+      createTime: new Date().toISOString().split('T')[0],
+      approvalTime: new Date().toISOString().split('T')[0],
+      
+      // 立项相关信息
+      approvalId: approvedProject.id,
+      approvalStatus: 'passed',
+      department: approvedProject.department,
+      year: approvedProject.year,
+      
+      // 默认配置
+      priority: 'medium',
+      template: 'standard',
+      autoAssignTeam: true
+    }
+    
+    // 这里应该调用API创建项目
+    // const newProject = await createProjectFromApproval(projectData)
+    
+    message.success({
+      content: `项目"${approvedProject.title}"立项通过！项目已自动添加到项目经理后台，可在项目详情管理中进行配置`,
+      duration: 6
+    })
+    
+  } catch (error) {
+    console.error('自动创建项目失败:', error)
+    message.error('项目立项通过，但自动创建项目失败，请手动在项目经理后台创建')
   }
 }
 
@@ -2098,7 +2147,7 @@ const handleImprovementReviewSubmit = () => {
       
       if (result === 'approved') {
         // 整改材料审核通过 → 验收通过
-                  projects.value[projectIndex].currentStatus = 'approval_passed'
+        projects.value[projectIndex].currentStatus = 'approval_passed'
         projects.value[projectIndex].finalResult = 'passed'
         projects.value[projectIndex].conclusion = {
           ...projects.value[projectIndex].conclusion,
@@ -2113,6 +2162,9 @@ const handleImprovementReviewSubmit = () => {
         projects.value[projectIndex].improvementSubmitted = true
         
         message.success('整改材料审核通过，项目验收完成！')
+        
+        // 🎯 整改通过后也自动创建项目
+        handleAutoCreateProject(projects.value[projectIndex])
       } else {
         // 整改材料审核不通过 → 保持有条件通过，记录新的整改要求
         projects.value[projectIndex].conclusion = {
