@@ -1736,6 +1736,8 @@ onMounted(() => {
   .task-time{font-size:8px;padding:1px 4px;}
   .task-milestone{font-size:8px;padding:1px 4px;}
   .task-milestone .milestone-date{font-size:8px;}
+}
+
 /* 任务时间状态样式 */
 .task-time.time-due{color:#fa8c16;background:#fff9f0;border-color:#ffe7ba}
 .task-time.overdue{color:#d4380d !important;background:#fff1f0 !important;border-color:#ffa39e !important}
