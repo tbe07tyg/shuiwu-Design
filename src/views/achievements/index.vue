@@ -454,6 +454,178 @@
         </div>
       </div>
     </a-modal>
+
+    <!-- 成果详情查看弹窗 -->
+    <a-modal
+      v-model:open="detailModalVisible"
+      :title="`🏆 成果详情 - ${selectedAchievement?.title || ''}`"
+      width="1000px"
+      :footer="null"
+      @cancel="handleDetailCancel"
+    >
+      <div v-if="selectedAchievement" class="detail-modal">
+        <!-- 基本信息区域 -->
+        <div class="detail-section">
+          <h4><FileSearchOutlined /> 基本信息</h4>
+          <a-descriptions :column="2" bordered size="small">
+            <a-descriptions-item label="成果名称" :span="2">
+              <div class="title-with-type">
+                <span class="achievement-title">{{ selectedAchievement.title }}</span>
+                <a-tag :color="getTypeColor(selectedAchievement.type)" class="type-tag">
+                  {{ getTypeIcon(selectedAchievement.type) }} {{ getTypeText(selectedAchievement.type) }}
+                </a-tag>
+              </div>
+            </a-descriptions-item>
+            <a-descriptions-item label="所属项目">
+              {{ selectedAchievement.projectName }}
+            </a-descriptions-item>
+            <a-descriptions-item label="负责人">
+              {{ selectedAchievement.responsible }}
+            </a-descriptions-item>
+            <a-descriptions-item label="完成时间">
+              {{ selectedAchievement.completionDate }}
+            </a-descriptions-item>
+            <a-descriptions-item label="成果编号">
+              {{ selectedAchievement.id }}
+            </a-descriptions-item>
+            <a-descriptions-item label="成果描述" :span="2">
+              <div class="description-content">{{ selectedAchievement.description }}</div>
+            </a-descriptions-item>
+          </a-descriptions>
+        </div>
+
+        <!-- 成果详情区域（根据类型动态显示） -->
+        <div class="detail-section">
+          <h4><InfoCircleOutlined /> 详细信息</h4>
+          
+          <!-- 论文类型详情 -->
+          <div v-if="selectedAchievement.type === 'paper'">
+            <a-descriptions :column="2" bordered size="small">
+              <a-descriptions-item label="发表期刊">
+                {{ selectedAchievement.details.journal }}
+              </a-descriptions-item>
+              <a-descriptions-item label="发表年份">
+                {{ selectedAchievement.details.year }}
+              </a-descriptions-item>
+              <a-descriptions-item label="影响因子">
+                <a-tag color="blue">IF: {{ selectedAchievement.details.impactFactor }}</a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="论文状态">
+                <a-tag color="green">已发表</a-tag>
+              </a-descriptions-item>
+            </a-descriptions>
+          </div>
+
+          <!-- 知识产权类型详情 -->
+          <div v-else-if="selectedAchievement.type === 'ip'">
+            <a-descriptions :column="2" bordered size="small">
+              <a-descriptions-item label="知识产权类型">
+                {{ selectedAchievement.details.ipType }}
+              </a-descriptions-item>
+              <a-descriptions-item label="申请号">
+                {{ selectedAchievement.details.applicationNumber }}
+              </a-descriptions-item>
+              <a-descriptions-item label="授权状态">
+                <a-tag :color="selectedAchievement.details.status === '已授权' ? 'green' : 'orange'">
+                  {{ selectedAchievement.details.status }}
+                </a-tag>
+              </a-descriptions-item>
+              <a-descriptions-item label="申请时间">
+                {{ selectedAchievement.completionDate }}
+              </a-descriptions-item>
+            </a-descriptions>
+          </div>
+
+          <!-- 应用成果类型详情 -->
+          <div v-else-if="selectedAchievement.type === 'application'">
+            <a-descriptions :column="2" bordered size="small">
+              <a-descriptions-item label="应用领域">
+                {{ selectedAchievement.details.field }}
+              </a-descriptions-item>
+              <a-descriptions-item label="应用规模">
+                {{ selectedAchievement.details.scale }}
+              </a-descriptions-item>
+              <a-descriptions-item label="经济效益" :span="2">
+                <a-tag color="green">{{ selectedAchievement.details.economicBenefit }}</a-tag>
+              </a-descriptions-item>
+            </a-descriptions>
+          </div>
+
+          <!-- 平台建设类型详情 -->
+          <div v-else-if="selectedAchievement.type === 'platform'">
+            <a-descriptions :column="2" bordered size="small">
+              <a-descriptions-item label="平台类型">
+                {{ selectedAchievement.details.platformType }}
+              </a-descriptions-item>
+              <a-descriptions-item label="服务对象">
+                {{ selectedAchievement.details.serviceTarget }}
+              </a-descriptions-item>
+              <a-descriptions-item label="用户规模">
+                {{ selectedAchievement.details.userScale }}
+              </a-descriptions-item>
+              <a-descriptions-item label="技术架构">
+                分布式云平台
+              </a-descriptions-item>
+            </a-descriptions>
+          </div>
+
+          <!-- 其他成果类型详情 -->
+          <div v-else>
+            <a-descriptions :column="2" bordered size="small">
+              <a-descriptions-item label="成果类别">
+                {{ selectedAchievement.details.category }}
+              </a-descriptions-item>
+              <a-descriptions-item label="应用价值">
+                {{ selectedAchievement.details.value }}
+              </a-descriptions-item>
+            </a-descriptions>
+          </div>
+        </div>
+
+        <!-- 附件列表区域 -->
+        <div v-if="selectedAchievement.attachments && selectedAchievement.attachments.length > 0" class="detail-section">
+          <h4><PaperClipOutlined /> 相关附件 ({{ selectedAchievement.attachments.length }}个)</h4>
+          <div class="attachments-grid">
+            <div 
+              v-for="attachment in selectedAchievement.attachments" 
+              :key="attachment.id"
+              class="attachment-card"
+            >
+              <div class="attachment-icon">
+                <FileOutlined />
+              </div>
+              <div class="attachment-info">
+                <div class="attachment-name">{{ attachment.name }}</div>
+                <div class="attachment-size">{{ attachment.size }}</div>
+              </div>
+              <div class="attachment-actions">
+                <a-button type="link" size="small" @click="downloadAttachment(attachment)">
+                  <DownloadOutlined />
+                  下载
+                </a-button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作按钮区域 -->
+        <div class="detail-actions">
+          <a-space>
+            <a-button type="primary" @click="editAchievement(selectedAchievement)">
+              <EditOutlined />
+              编辑成果
+            </a-button>
+            <a-button @click="exportSingle(selectedAchievement)">
+              <DownloadOutlined />
+              导出成果
+            </a-button>
+            <a-button @click="handleDetailCancel">
+              关闭
+            </a-button>
+          </a-space>
+        </div>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -468,7 +640,11 @@ import {
   SearchOutlined,
   FileOutlined,
   UploadOutlined,
-  DeleteOutlined
+  DeleteOutlined,
+  FileSearchOutlined,
+  InfoCircleOutlined,
+  PaperClipOutlined,
+  EditOutlined
 } from '@ant-design/icons-vue'
 
 /**
@@ -484,6 +660,7 @@ const filters = reactive({
 // 弹窗状态
 const addDialogVisible = ref(false)
 const attachmentsModalVisible = ref(false)
+const detailModalVisible = ref(false)
 const editingAchievement = ref(null)
 const selectedAchievement = ref(null)
 
@@ -740,7 +917,8 @@ const showAddDialog = () => {
 }
 
 const viewDetail = (achievement) => {
-  message.info(`查看成果详情: ${achievement.title}`)
+  selectedAchievement.value = achievement
+  detailModalVisible.value = true
 }
 
 const editAchievement = (achievement) => {
@@ -801,6 +979,11 @@ const resetFormData = () => {
 
 const beforeUpload = () => {
   return false // 阻止自动上传
+}
+
+const handleDetailCancel = () => {
+  detailModalVisible.value = false
+  selectedAchievement.value = null
 }
 
 onMounted(() => {
@@ -943,6 +1126,7 @@ onMounted(() => {
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -989,5 +1173,116 @@ onMounted(() => {
 .attachment-size {
   font-size: 12px;
   color: #999;
+}
+
+/* 详情弹窗样式 */
+.detail-modal {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.detail-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+}
+
+.detail-section h4 {
+  margin: 0 0 16px 0;
+  color: #234fa2;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title-with-type {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.achievement-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.type-tag {
+  font-size: 12px;
+}
+
+.description-content {
+  line-height: 1.6;
+  color: #666;
+  background: #fff;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e8e8e8;
+}
+
+.attachments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.attachment-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.attachment-card:hover {
+  border-color: #234fa2;
+  box-shadow: 0 2px 8px rgba(35, 79, 162, 0.1);
+}
+
+.attachment-icon {
+  font-size: 20px;
+  color: #666;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  border-radius: 6px;
+}
+
+.attachment-info {
+  flex: 1;
+}
+
+.attachment-name {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.attachment-size {
+  font-size: 12px;
+  color: #999;
+}
+
+.attachment-actions {
+  flex-shrink: 0;
+}
+
+.detail-actions {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+  text-align: right;
 }
 </style> 

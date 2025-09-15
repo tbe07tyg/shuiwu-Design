@@ -1628,6 +1628,222 @@ onMounted(() => {
   .task-milestone{font-size:8px;padding:1px 4px;}
   .task-milestone .milestone-date{font-size:8px;}
 }
+
+/* 任务时间状态样式 */
+.task-time.time-due{color:#fa8c16;background:#fff9f0;border-color:#ffe7ba}
+.task-time.overdue{color:#d4380d !important;background:#fff1f0 !important;border-color:#ffa39e !important}
+
+/* 里程碑信息样式 - 更庄重的色调 */
+.task-milestone{color:#234fa2;background:#f0f5ff;border:1px solid #d6e1ff;border-radius:12px;padding:2px 8px;font-weight:500;display:inline-flex;align-items:center;gap:2px}
+.task-milestone .milestone-date{color:#595959;font-size:10px;font-weight:400}
+
+.task-assignee{border-radius:12px;padding:2px 8px;border:1px solid}
+.task-assignee.assigned{color:#52c41a;background:#f6ffed;border-color:#b7eb8f}
+.task-assignee.unassigned{color:#d4380d;background:#fff7e6;border-color:#ffd6bf}
+.task-origin{color:#8c8c8c;background:#f5f5f5;border:1px solid #d9d9d9;border-radius:12px;padding:2px 8px}
+
+/* 保留原有任务样式（用于其他地方） */
+.task{border:1px solid #e6eaf2;border-radius:10px;padding:10px;margin-bottom:8px;background:#fff;display:grid;grid-template-columns:1fr auto;gap:8px}
+.task .name{font-weight:600}
+.task .meta{display:flex;gap:6px;align-items:center;font-size:12px;color:#666}
+.pill{border:1px solid #e6eaf2;border-radius:999px;padding:2px 8px;font-size:12px;background:#fafbff}
+.pill.blue{color:#234fa2;border-color:#d6e1ff}
+.pill.red{color:#d4380d;border-color:#ffd6bf;background:#fff7e6}
+.pill.green{color:#389e0d;border-color:#c2f0c2;background:#f6ffed}
+.pill.assign{border-color:#e6eaf2}
+.pill.assigned{color:#1d39c4;border-color:#adc6ff;background:#f0f5ff}
+.pill.unassigned{color:#d4380d;border-color:#ffa39e;background:#fff1f0}
+.origin{font-size:11px;border-radius:4px;padding:2px 6px;background:#f0f5ff;color:#3f5fb6;border:1px solid #d6e4ff}
+.segmented-filter{display:flex;align-items:center;gap:8px}
+.chip-row{width:100%;margin-top:6px}
+.member{border:1px solid #e6eaf2;border-radius:10px;padding:10px;margin:10px;background:#fff}
+.member.member--highlight{border-color:#4e7be6; box-shadow:0 0 0 3px rgba(78,123,230,0.15)}
+.member .row{display:flex;justify-content:space-between;align-items:center}
+.avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#cfd8ff,#e3ecff);display:inline-flex;align-items:center;justify-content:center;color:#2b4db8;font-weight:700}
+.cap{font-size:12px;color:#666}
+.load{height:6px;border-radius:999px;background:#f0f0f0;overflow:hidden;margin-top:8px}
+.load .bar{height:100%;background:linear-gradient(90deg,#69c0ff,#4e7be6)}
+.drop{margin-top:10px;border:1px dashed #e6eaf2;border-radius:8px;padding:8px;background:#fafcff}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #e6eaf2;border-radius:999px;padding:3px 8px;margin:4px;background:#fff;font-size:12px}
+.footer{position:sticky;bottom:0;background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(8px);border-top:1px solid #e6eaf2;padding:10px;margin-top:16px}
+.btns{display:flex;gap:10px;justify-content:flex-end}
+.hint{font-size:12px;color:#666;margin-top:6px}
+.rte-toolbar{margin-bottom:6px}
+.rte-editor{min-height:140px;border:1px solid #e6eaf2;border-radius:8px;padding:8px}
+
+@media (max-width:1400px){
+  .stats-cards{gap:10px;flex-wrap:wrap;}
+  .stat-card{padding:12px 16px;min-width:95px;flex:1 1 calc(14.2% - 9px);}
+  .stat-value{font-size:18px;}
+}
+
+@media (max-width:1200px){
+  .stats-cards{gap:8px;}
+  .stat-card{flex:1 1 calc(25% - 6px);min-width:90px;}
+  .stat-value{font-size:17px;}
+  .stat-label{font-size:11px;}
+}
+
+@media (max-width:1024px){
+  .stats-cards{gap:8px;}
+  .stat-card{flex:1 1 calc(33.33% - 6px);min-width:85px;}
+  .stat-value{font-size:16px;}
+  .main{flex-direction:column}
+  .col.left,.col.right{flex:unset}
+}
+
+@media (max-width:900px){
+  .stats-cards{gap:8px;}
+  .stat-card{flex:1 1 calc(50% - 4px);min-width:80px;}
+  .stat-value{font-size:15px;}
+  .stat-label{font-size:10px;}
+}
+
+@media (max-width:768px){
+  .stats-cards{flex-wrap:wrap;gap:6px;}
+  .stat-card{min-width:70px;flex:1 1 calc(50% - 3px);padding:10px 12px;}
+  .stat-value{font-size:15px;}
+  .stat-label{font-size:10px;margin-bottom:3px;line-height:1.2;}
+  
+  /* 移动端任务信息优化 */
+  .task-meta{gap:6px;}
+  .task-times{gap:3px;margin:2px 0;}
+  .task-time{font-size:10px;padding:1px 6px;}
+  .task-milestone{font-size:10px;padding:1px 6px;}
+  .task-milestone .milestone-date{font-size:9px;}
+}
+
+@media (max-width:600px){
+  .stats-cards{flex-wrap:wrap;gap:6px;}
+  .stat-card{min-width:65px;flex:1 1 calc(50% - 3px);padding:8px 10px;}
+  .stat-value{font-size:14px;}
+  .stat-label{font-size:9px;margin-bottom:2px;line-height:1.1;}
+  
+  /* 更小屏幕的任务信息优化 */
+  .task-time{font-size:9px;padding:1px 5px;}
+  .task-milestone{font-size:9px;padding:1px 5px;}
+}
+
+@media (max-width:480px){
+  .stats-cards{flex-wrap:wrap;gap:4px;}
+  .stat-card{min-width:60px;flex:1 1 calc(50% - 2px);padding:6px 8px;}
+  .stat-value{font-size:13px;}
+  .stat-label{font-size:8px;margin-bottom:2px;line-height:1.1;}
+  
+  /* 最小屏幕的任务信息优化 */
+  .task-meta{flex-direction:column;align-items:flex-start;gap:4px;}
+  .task-times{width:100%;}
+  .task-time{font-size:8px;padding:1px 4px;}
+  .task-milestone{font-size:8px;padding:1px 4px;}
+  .task-milestone .milestone-date{font-size:8px;}
+/* 任务时间状态样式 */
+.task-time.time-due{color:#fa8c16;background:#fff9f0;border-color:#ffe7ba}
+.task-time.overdue{color:#d4380d !important;background:#fff1f0 !important;border-color:#ffa39e !important}
+
+/* 里程碑信息样式 - 更庄重的色调 */
+.task-milestone{color:#234fa2;background:#f0f5ff;border:1px solid #d6e1ff;border-radius:12px;padding:2px 8px;font-weight:500;display:inline-flex;align-items:center;gap:2px}
+.task-milestone .milestone-date{color:#595959;font-size:10px;font-weight:400}
+
+.task-assignee{border-radius:12px;padding:2px 8px;border:1px solid}
+.task-assignee.assigned{color:#52c41a;background:#f6ffed;border-color:#b7eb8f}
+.task-assignee.unassigned{color:#d4380d;background:#fff7e6;border-color:#ffd6bf}
+.task-origin{color:#8c8c8c;background:#f5f5f5;border:1px solid #d9d9d9;border-radius:12px;padding:2px 8px}
+
+/* 保留原有任务样式（用于其他地方） */
+.task{border:1px solid #e6eaf2;border-radius:10px;padding:10px;margin-bottom:8px;background:#fff;display:grid;grid-template-columns:1fr auto;gap:8px}
+.task .name{font-weight:600}
+.task .meta{display:flex;gap:6px;align-items:center;font-size:12px;color:#666}
+.pill{border:1px solid #e6eaf2;border-radius:999px;padding:2px 8px;font-size:12px;background:#fafbff}
+.pill.blue{color:#234fa2;border-color:#d6e1ff}
+.pill.red{color:#d4380d;border-color:#ffd6bf;background:#fff7e6}
+.pill.green{color:#389e0d;border-color:#c2f0c2;background:#f6ffed}
+.pill.assign{border-color:#e6eaf2}
+.pill.assigned{color:#1d39c4;border-color:#adc6ff;background:#f0f5ff}
+.pill.unassigned{color:#d4380d;border-color:#ffa39e;background:#fff1f0}
+.origin{font-size:11px;border-radius:4px;padding:2px 6px;background:#f0f5ff;color:#3f5fb6;border:1px solid #d6e4ff}
+.segmented-filter{display:flex;align-items:center;gap:8px}
+.chip-row{width:100%;margin-top:6px}
+.member{border:1px solid #e6eaf2;border-radius:10px;padding:10px;margin:10px;background:#fff}
+.member.member--highlight{border-color:#4e7be6; box-shadow:0 0 0 3px rgba(78,123,230,0.15)}
+.member .row{display:flex;justify-content:space-between;align-items:center}
+.avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#cfd8ff,#e3ecff);display:inline-flex;align-items:center;justify-content:center;color:#2b4db8;font-weight:700}
+.cap{font-size:12px;color:#666}
+.load{height:6px;border-radius:999px;background:#f0f0f0;overflow:hidden;margin-top:8px}
+.load .bar{height:100%;background:linear-gradient(90deg,#69c0ff,#4e7be6)}
+.drop{margin-top:10px;border:1px dashed #e6eaf2;border-radius:8px;padding:8px;background:#fafcff}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #e6eaf2;border-radius:999px;padding:3px 8px;margin:4px;background:#fff;font-size:12px}
+.footer{position:sticky;bottom:0;background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(8px);border-top:1px solid #e6eaf2;padding:10px;margin-top:16px}
+.btns{display:flex;gap:10px;justify-content:flex-end}
+.hint{font-size:12px;color:#666;margin-top:6px}
+.rte-toolbar{margin-bottom:6px}
+.rte-editor{min-height:140px;border:1px solid #e6eaf2;border-radius:8px;padding:8px}
+
+@media (max-width:1400px){
+  .stats-cards{gap:10px;flex-wrap:wrap;}
+  .stat-card{padding:12px 16px;min-width:95px;flex:1 1 calc(14.2% - 9px);}
+  .stat-value{font-size:18px;}
+}
+
+@media (max-width:1200px){
+  .stats-cards{gap:8px;}
+  .stat-card{flex:1 1 calc(25% - 6px);min-width:90px;}
+  .stat-value{font-size:17px;}
+  .stat-label{font-size:11px;}
+}
+
+@media (max-width:1024px){
+  .stats-cards{gap:8px;}
+  .stat-card{flex:1 1 calc(33.33% - 6px);min-width:85px;}
+  .stat-value{font-size:16px;}
+  .main{flex-direction:column}
+  .col.left,.col.right{flex:unset}
+}
+
+@media (max-width:900px){
+  .stats-cards{gap:8px;}
+  .stat-card{flex:1 1 calc(50% - 4px);min-width:80px;}
+  .stat-value{font-size:15px;}
+  .stat-label{font-size:10px;}
+}
+
+@media (max-width:768px){
+  .stats-cards{flex-wrap:wrap;gap:6px;}
+  .stat-card{min-width:70px;flex:1 1 calc(50% - 3px);padding:10px 12px;}
+  .stat-value{font-size:15px;}
+  .stat-label{font-size:10px;margin-bottom:3px;line-height:1.2;}
+  
+  /* 移动端任务信息优化 */
+  .task-meta{gap:6px;}
+  .task-times{gap:3px;margin:2px 0;}
+  .task-time{font-size:10px;padding:1px 6px;}
+  .task-milestone{font-size:10px;padding:1px 6px;}
+  .task-milestone .milestone-date{font-size:9px;}
+}
+
+@media (max-width:600px){
+  .stats-cards{flex-wrap:wrap;gap:6px;}
+  .stat-card{min-width:65px;flex:1 1 calc(50% - 3px);padding:8px 10px;}
+  .stat-value{font-size:14px;}
+  .stat-label{font-size:9px;margin-bottom:2px;line-height:1.1;}
+  
+  /* 更小屏幕的任务信息优化 */
+  .task-time{font-size:9px;padding:1px 5px;}
+  .task-milestone{font-size:9px;padding:1px 5px;}
+}
+
+@media (max-width:480px){
+  .stats-cards{flex-wrap:wrap;gap:4px;}
+  .stat-card{min-width:60px;flex:1 1 calc(50% - 2px);padding:6px 8px;}
+  .stat-value{font-size:13px;}
+  .stat-label{font-size:8px;margin-bottom:2px;line-height:1.1;}
+  
+  /* 最小屏幕的任务信息优化 */
+  .task-meta{flex-direction:column;align-items:flex-start;gap:4px;}
+  .task-times{width:100%;}
+  .task-time{font-size:8px;padding:1px 4px;}
+  .task-milestone{font-size:8px;padding:1px 4px;}
+  .task-milestone .milestone-date{font-size:8px;}
+}
 </style>
 
 

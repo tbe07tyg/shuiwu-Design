@@ -1,2 +1,0 @@
-登录页：http://localhost:3000/login
-工作台：http://localhost:3000/dashboard 

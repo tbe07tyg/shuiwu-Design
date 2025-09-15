@@ -535,6 +535,17 @@ export const usePlanningStore = defineStore('planning', () => {
     }
     return true
   }
+  // 自动初始化：从本地存储加载数据（在返回 store 之前执行）
+  try {
+    const loaded = loadFromLocal()
+    if (loaded) {
+      console.log('✅ Planning数据已从本地存储恢复')
+    } else {
+      console.log('ℹ️ Planning首次运行，使用默认数据')
+    }
+  } catch (e) {
+    console.warn('⚠️ Planning数据加载失败，使用默认数据:', e)
+  }
 
   return {
     // state / computed
@@ -590,74 +601,5 @@ export const usePlanningStore = defineStore('planning', () => {
     reorderWithinMember,
     deleteTaskPermanently
   }
-  
-  // 自动初始化：从本地存储加载数据（放在return之前）
-  try {
-    const loaded = loadFromLocal()
-    if (loaded) {
-      console.log('✅ Planning数据已从本地存储恢复')
-    } else {
-      console.log('ℹ️ Planning首次运行，使用默认数据')
-    }
-  } catch (e) {
-    console.warn('⚠️ Planning数据加载失败，使用默认数据:', e)
-  }
-  
-  return {
-    // state / computed
-    tasks, // 展示层（已套用覆写、过滤归档）
-    milestones,
-    assignments,
-    draftPlan,
-    reportTemplates,
-    defaultReportTemplateId,
-    baseline,
-    userEdits,
-    metadata,
-    snapshots,
-    totalTasks,
-    unassignedCount,
-    involvedMilestoneCount,
-    phaseFilters,
-    milestoneFilters,
-    archivedTasks,
-    // actions
-    createSnapshot,
-    rollbackToSnapshot,
-    serialize,
-    deserialize,
-    saveToLocal,
-    loadFromLocal,
-    previewMerge,
-    mergeBaseline,
-    saveUserEdit,
-    getBaselineTask,
-    isFieldProtected,
-    archiveTask,
-    setFieldProtection,
-    clearUserEditField,
-    addTask,
-    archiveTaskById,
-    // templates
-    listReportTemplates,
-    getReportTemplateById,
-    getDefaultReportTemplate,
-    setDefaultReportTemplate,
-    upsertReportTemplate,
-    removeReportTemplate,
-    getActiveReportTemplate,
-    getActiveReportTemplateByTaskId,
-    addMilestone,
-    removeMilestone,
-    setArchived,
-    restoreTask,
-    assignTaskToMember,
-    unassignTask,
-    getMemberAssignments,
-    getTaskAssignee,
-    reorderWithinMember,
-    deleteTaskPermanently
-  }
 })
-
 

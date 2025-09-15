@@ -128,17 +128,11 @@
                 <template v-else-if="column.key === 'amount'">
                   ¥{{ formatMoney(record.amount) }}
                 </template>
-                <template v-else-if="column.key === 'status'">
-                  <a-tag :color="getStatusColor(record.status)">
-                    {{ record.status }}
-                  </a-tag>
-                </template>
                 <template v-else-if="column.key === 'actions'">
                   <a-button 
                     type="link" 
                     size="small" 
                     @click="editRecord(record)"
-                    :disabled="record.status === '已审核'"
                   >
                     编辑
                   </a-button>
@@ -147,7 +141,6 @@
                     size="small" 
                     danger 
                     @click="deleteRecord(record)"
-                    :disabled="record.status === '已审核'"
                   >
                     删除
                   </a-button>
@@ -168,11 +161,6 @@
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'amount'">
                 ¥{{ formatMoney(record.amount) }}
-              </template>
-              <template v-else-if="column.key === 'status'">
-                <a-tag :color="getStatusColor(record.status)">
-                  {{ record.status }}
-                </a-tag>
               </template>
             </template>
           </a-table>
@@ -593,7 +581,6 @@ const reportRecords = ref([
     category: '设备费',
     amount: 15000,
     description: '购买实验设备XXX',
-    status: '待审核',
     submitter: '张三'
   },
   {
@@ -602,7 +589,6 @@ const reportRecords = ref([
     category: '材料费',
     amount: 8000,
     description: '采购实验材料',
-    status: '已审核',
     submitter: '张三'
   }
 ])
@@ -615,7 +601,6 @@ const allRecords = ref([
     category: '人员费',
     amount: 12000,
     description: '研究人员劳务费',
-    status: '已审核',
     submitter: '李四'
   }
 ])
@@ -643,7 +628,6 @@ const reportColumns = [
   { title: '科目', dataIndex: 'category', key: 'category' },
   { title: '金额', dataIndex: 'amount', key: 'amount' },
   { title: '用途说明', dataIndex: 'description', key: 'description' },
-  { title: '状态', dataIndex: 'status', key: 'status' },
   { title: '操作', key: 'actions' }
 ]
 
@@ -652,8 +636,7 @@ const recordColumns = [
   { title: '科目', dataIndex: 'category', key: 'category' },
   { title: '金额', dataIndex: 'amount', key: 'amount' },
   { title: '用途说明', dataIndex: 'description', key: 'description' },
-  { title: '填报人', dataIndex: 'submitter', key: 'submitter' },
-  { title: '状态', dataIndex: 'status', key: 'status' }
+  { title: '填报人', dataIndex: 'submitter', key: 'submitter' }
 ]
 
 // 方法
@@ -668,14 +651,6 @@ const getProgressColor = (rate) => {
   return '#1890ff'
 }
 
-const getStatusColor = (status) => {
-  const colorMap = {
-    '待审核': 'orange',
-    '已审核': 'green',
-    '已驳回': 'red'
-  }
-  return colorMap[status] || 'default'
-}
 
 const handleProjectChange = (projectId) => {
   console.log('选择项目:', projectId)
@@ -740,11 +715,10 @@ const handleSubmit = () => {
       category: categoryName,
       amount: formData.value.amount,
       description: formData.value.description,
-      status: '待审核',
       submitter: '张三'
     }
     reportRecords.value.unshift(newRecord)
-    message.success('提交成功，等待审核')
+    message.success('提交成功')
   }
   
   modalVisible.value = false
@@ -932,14 +906,13 @@ const confirmSmartData = () => {
     category: categoryName,
     amount: recognizedData.value.amount,
     description: recognizedData.value.description,
-    status: '待审核',
     submitter: '张三',
     isSmartFilled: true // 标记为智能填报
   }
   
   reportRecords.value.unshift(newRecord)
   smartModalVisible.value = false
-  message.success('智能填报成功！记录已提交审核')
+  message.success('智能填报成功！')
   
   // 重置数据
   resetSmartData()

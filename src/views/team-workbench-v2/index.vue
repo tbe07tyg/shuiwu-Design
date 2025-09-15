@@ -1099,3 +1099,389 @@ const handleUpdateProgressForm = () => {
   }
 }
 </style>
+.history-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.timeline-item {
+  position: relative;
+  background: #fafafa;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e8e8e8;
+}
+
+.timeline-item:hover {
+  border-color: #1890ff;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+}
+
+/* 提交版本区域 */
+.submission-version {
+  background: #f0f5ff;
+  border-bottom: 1px solid #d6e4ff;
+}
+
+.version-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.version-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.submission-time {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.version-note {
+  font-size: 12px;
+  color: #1890ff;
+  font-style: italic;
+}
+
+.submission-content {
+  padding: 16px;
+  background: white;
+  border-top: 1px solid #e6f7ff;
+}
+
+.content-section {
+  margin-bottom: 16px;
+}
+
+.content-section:last-child {
+  margin-bottom: 0;
+}
+
+.content-section h6 {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #234fa2;
+}
+
+.content-text {
+  margin: 0;
+  color: #595959;
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+.key-points-list {
+  margin: 0;
+  padding-left: 16px;
+  color: #595959;
+  font-size: 13px;
+}
+
+.key-points-list li {
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.attachment-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* 审查意见区域 */
+.review-section {
+  padding: 16px;
+  background: white;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.reviewer-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reviewer-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reviewer-name {
+  font-weight: 600;
+  color: #234fa2;
+  font-size: 14px;
+}
+
+.review-time {
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+.review-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.review-opinion,
+.review-suggestions {
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border-left: 4px solid #234fa2;
+}
+
+.review-opinion strong,
+.review-suggestions strong {
+  color: #234fa2;
+  font-size: 13px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.review-opinion p,
+.review-suggestions p {
+  margin: 0;
+  color: #333;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* 时间线连接器 */
+.timeline-connector {
+  height: 16px;
+  width: 2px;
+  background: linear-gradient(to bottom, #d9d9d9, transparent);
+  margin: 0 auto;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .team-workbench-v2 {
+    padding: 16px;
+  }
+  
+  .page-header {
+    padding: 20px;
+  }
+  
+  .todo-filters {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .review-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+</style>
+.history-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.timeline-item {
+  position: relative;
+  background: #fafafa;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e8e8e8;
+}
+
+.timeline-item:hover {
+  border-color: #1890ff;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+}
+
+/* 提交版本区域 */
+.submission-version {
+  background: #f0f5ff;
+  border-bottom: 1px solid #d6e4ff;
+}
+
+.version-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.version-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.submission-time {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.version-note {
+  font-size: 12px;
+  color: #1890ff;
+  font-style: italic;
+}
+
+.submission-content {
+  padding: 16px;
+  background: white;
+  border-top: 1px solid #e6f7ff;
+}
+
+.content-section {
+  margin-bottom: 16px;
+}
+
+.content-section:last-child {
+  margin-bottom: 0;
+}
+
+.content-section h6 {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #234fa2;
+}
+
+.content-text {
+  margin: 0;
+  color: #595959;
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+.key-points-list {
+  margin: 0;
+  padding-left: 16px;
+  color: #595959;
+  font-size: 13px;
+}
+
+.key-points-list li {
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.attachment-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* 审查意见区域 */
+.review-section {
+  padding: 16px;
+  background: white;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.reviewer-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reviewer-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reviewer-name {
+  font-weight: 600;
+  color: #234fa2;
+  font-size: 14px;
+}
+
+.review-time {
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+.review-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.review-opinion,
+.review-suggestions {
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border-left: 4px solid #234fa2;
+}
+
+.review-opinion strong,
+.review-suggestions strong {
+  color: #234fa2;
+  font-size: 13px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.review-opinion p,
+.review-suggestions p {
+  margin: 0;
+  color: #333;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* 时间线连接器 */
+.timeline-connector {
+  height: 16px;
+  width: 2px;
+  background: linear-gradient(to bottom, #d9d9d9, transparent);
+  margin: 0 auto;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .team-workbench-v2 {
+    padding: 16px;
+  }
+  
+  .page-header {
+    padding: 20px;
+  }
+  
+  .todo-filters {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .review-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+</style>
